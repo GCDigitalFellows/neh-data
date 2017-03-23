@@ -15,7 +15,7 @@
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -97,34 +97,34 @@ button.code-folding-btn:focus {
 <style type="text/css">
 /* padding for bootstrap navbar */
 body {
-  padding-top: 51px;
+  padding-top: 66px;
   padding-bottom: 40px;
 }
 /* offset scroll position for anchor links (for fixed navbar)  */
 .section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 
 .section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 </style>
 
@@ -201,60 +201,64 @@ $(document).ready(function () {
 </div>
 
 
-<pre class="r"><code>library(tidyverse)
-library(xml2)
-DATADIR &lt;- &#39;./.data&#39;</code></pre>
-<div id="download-xml-files" class="section level3">
-<h3>Download XML files</h3>
-<pre class="r"><code># grant data is available online at https://securegrants.neh.gov/open/data/
-urls &lt;- c(&#39;https://securegrants.neh.gov/Open/data/NEH_Grants1960s.zip&#39;,
-          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1970s.zip&#39;,
-          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1980s.zip&#39;,
-          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip&#39;,
-          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants2000s.zip&#39;,
-          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants2010s.zip&#39;)
-# intermediate files will be saved between steps
-dir.create(DATADIR, showWarnings = FALSE)
-# download zip files, extract the xml contained within them, and build a list of xml files
-processurl &lt;- function(url) {
+<div id="downloading-source-files" class="section level3">
+<h3>Downloading source files</h3>
+<p>Fortunately, the NEH provides open access to their <a href="https://securegrants.neh.gov/open/data/">grants data</a>. We first use <code>rvest::read_html</code> to get a list of all the zipped grant files:</p>
+<pre class="r"><code>listnehgrantzips &lt;- function() {
+  zipurls &lt;- read_html(&#39;https://securegrants.neh.gov/open/data&#39;) %&gt;%
+    html_nodes(&#39;a[href*=&quot;NEH_Grants&quot;][href$=&quot;.zip&quot;]&#39;) %&gt;%
+    html_attr(&#39;href&#39;) %&gt;%
+    paste0(&#39;https://securegrants.neh.gov/&#39;, .)
+}</code></pre>
+<p>Each grant zip file contains an XML data file and an XML Schema Definition file, which we can ignore for our current purposes. We save the XML to a directory in our project directory:</p>
+<pre class="r"><code>downloadxml &lt;- function(url) {
+  DATADIR &lt;- &#39;./.data&#39;
+  # intermediate files will be saved between steps
+  dir.create(DATADIR, showWarnings = FALSE)
   xmlfile &lt;- gsub(&quot;.zip&quot;, &quot;.xml&quot;, basename(url))
   # only download if xml file doesn&#39;t already exist
   if(!file.exists(file.path(DATADIR, xmlfile))) {
     tf &lt;- tempfile()
     download.file(url, tf, quiet = TRUE)
     unzip(tf, xmlfile, exdir=DATADIR)
+  } else {
+    file.path(DATADIR, xmlfile)
   }
-  xmlfile
-}
-xmlfiles &lt;- urls %&gt;% map(~ processurl(.))</code></pre>
+}</code></pre>
+<p>Finally, we pull these two functions together using <code>purrr::map</code> to download each file:</p>
+<pre class="r"><code>xmlfiles &lt;- listnehgrantzips() %&gt;% map(~ downloadxml(.)) %&gt;% unlist</code></pre>
 </div>
-<div id="pulling-data-out-of-xmls" class="section level3">
-<h3>Pulling data out of XMLs</h3>
-<p>Grants have <code>AppNumber</code> attributes:</p>
-<pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
+<div id="extracting-data-from-source-files" class="section level3">
+<h3>Extracting data from source files</h3>
+<p>The XML format can be difficult to load into a data table for analysis. It requires us to transform its nested structure into a unnested table form, with rows and columns. We use the <code>xml2::read_xml</code> function to pull nodes out of the XML tree structure:</p>
+<pre class="r"><code>read_xml(tail(xmlfiles, 1)) %&gt;% 
   xml_find_all(&#39;./Grant&#39;) %&gt;%
   head(1) %&gt;%
-  xml_attrs()</code></pre>
-<pre><code>## [[1]]
-##     AppNumber 
-## &quot;CH-20781-05&quot;</code></pre>
-<p>Grants have 28 fields:</p>
-<pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
-  xml_find_all(&#39;./Grant&#39;) %&gt;%
-  head(1) %&gt;%
-  xml_children() %&gt;%
-  xml_name()</code></pre>
-<pre><code>##  [1] &quot;ApplicantType&quot;     &quot;Institution&quot;       &quot;OrganizationType&quot; 
-##  [4] &quot;InstCity&quot;          &quot;InstState&quot;         &quot;InstPostalCode&quot;   
-##  [7] &quot;InstCountry&quot;       &quot;CouncilDate&quot;       &quot;YearAwarded&quot;      
-## [10] &quot;ProjectTitle&quot;      &quot;Program&quot;           &quot;Division&quot;         
-## [13] &quot;ApprovedOutright&quot;  &quot;ApprovedMatching&quot;  &quot;AwardOutright&quot;    
-## [16] &quot;AwardMatching&quot;     &quot;OriginalAmount&quot;    &quot;BeginGrant&quot;       
-## [19] &quot;EndGrant&quot;          &quot;ProjectDesc&quot;       &quot;ToSupport&quot;        
-## [22] &quot;PrimaryDiscipline&quot; &quot;SupplementCount&quot;   &quot;ParticipantCount&quot; 
-## [25] &quot;Participant&quot;       &quot;Participant&quot;       &quot;DisciplineCount&quot;  
-## [28] &quot;Discipline&quot;</code></pre>
-<p>Of those 28 fields, <code>Participant</code> and <code>Discipline</code> are nested nodes. The <code>Discipline</code> node is simply a list of <code>Name</code> nodes.</p>
+  xml_children()</code></pre>
+<pre><code>## {xml_nodeset (27)}
+##  [1] &lt;ApplicantType&gt;O&lt;/ApplicantType&gt;
+##  [2] &lt;Institution&gt;Center for Independent Documentary, Inc.&lt;/Institution&gt;
+##  [3] &lt;OrganizationType&gt;Four-Year College&lt;/OrganizationType&gt;
+##  [4] &lt;InstCity&gt;Boston&lt;/InstCity&gt;
+##  [5] &lt;InstState&gt;MA&lt;/InstState&gt;
+##  [6] &lt;InstPostalCode&gt;02135-1032&lt;/InstPostalCode&gt;
+##  [7] &lt;InstCountry&gt;USA&lt;/InstCountry&gt;
+##  [8] &lt;CouncilDate&gt;2009-07-01&lt;/CouncilDate&gt;
+##  [9] &lt;YearAwarded&gt;2010&lt;/YearAwarded&gt;
+## [10] &lt;ProjectTitle&gt;Mysticism and Monotheism&lt;/ProjectTitle&gt;
+## [11] &lt;Program&gt;America&#39;s Media Makers: Development Grants&lt;/Program&gt;
+## [12] &lt;Division&gt;Public Programs&lt;/Division&gt;
+## [13] &lt;ApprovedOutright&gt;65000.0000&lt;/ApprovedOutright&gt;
+## [14] &lt;ApprovedMatching&gt;0.0000&lt;/ApprovedMatching&gt;
+## [15] &lt;AwardOutright&gt;65000.0000&lt;/AwardOutright&gt;
+## [16] &lt;AwardMatching&gt;0.0000&lt;/AwardMatching&gt;
+## [17] &lt;OriginalAmount&gt;65000.0000&lt;/OriginalAmount&gt;
+## [18] &lt;BeginGrant&gt;2010-02-01T00:00:00&lt;/BeginGrant&gt;
+## [19] &lt;EndGrant&gt;2010-08-31T00:00:00&lt;/EndGrant&gt;
+## [20] &lt;ProjectDesc/&gt;
+## ...</code></pre>
+<p>We need to pull out the <code>AppNumber</code> attribute since this is the unique number used by the NEH to identify awarded grants.</p>
+<p>Of the 28 fields that are in the nodeset for each Grant, <code>Participant</code> and <code>Discipline</code> are nested nodes. The <code>Discipline</code> node is simply a list of <code>Name</code> nodes.</p>
 <pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
   xml_find_all(&#39;./Grant/*[count(*) &gt; 0]&#39;) %&gt;%
   head(5)</code></pre>
@@ -281,22 +285,38 @@ xmlfiles &lt;- urls %&gt;% map(~ processurl(.))</code></pre>
     spread(col_name_raw, cell_text)
   df
 }</code></pre>
-</div>
-<div id="combine-grants-data-from-xml" class="section level3">
-<h3>Combine grants data from XML</h3>
-<p>Using the <code>xmltodf</code> function defined above, we go through all the XML files we have downloaded and convert them to data frames that we finally combine into one.</p>
-<pre class="r"><code>GRANTSFILEPATH &lt;- &#39;.data/grants.rda&#39;
-if(!file.exists(GRANTSFILEPATH)) {
+<p>We use the <code>xmltodf</code> function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data.</p>
+<pre class="r"><code>preparegrantsdata &lt;- function() {
   grants &lt;- xmlfiles %&gt;% 
     map(~ xmltodf(.)) %&gt;%
     bind_rows() %&gt;%
-    mutate_if(is.character, funs(type.convert)) %&gt;%
     mutate_if(is.list, as.character) %&gt;%
+    mutate_if(is.character, funs(type.convert)) %&gt;%
     select(-ProjectDesc, -ToSupport) %&gt;% # FIXME: These fields are causing duplicates
     distinct()
-  save(grants, file=GRANTSFILEPATH)
 }
-load(GRANTSFILEPATH)</code></pre>
+if(!file.exists(&#39;.RData&#39;)) {
+  grants &lt;- preparegrantsdata()
+  save.image()
+} else {
+  load(&#39;.RData&#39;)
+}</code></pre>
+</div>
+<div id="caveats" class="section level3">
+<h3>Caveats</h3>
+<p>In defining NEH funding, the <a href="https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf">NEH Grants Data Dictionary</a> explains that there are five different dollar amounts included in the grants dataset:</p>
+<ol style="list-style-type: decimal">
+<li>ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.)</li>
+<li>ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.)</li>
+<li>AwardOutright: Amount actually awarded (outright funds).</li>
+<li>AwardMatching: Amount actually awarded (matching funds).</li>
+<li>OriginalAmount: Original amount of grant (minus any grant supplements).</li>
+</ol>
+<p>We will define the relevant <code>funding</code> value as the sum of <code>ApprovedOutright</code> and <code>ApprovedMatching</code>.</p>
+<p>Furthermore, we will adjust funding dollars into 2016 dollars using the <code>blscrapeR::inflation_adjust</code> function:</p>
+<pre class="r"><code>cpiadj &lt;- inflation_adjust(2017) %&gt;%
+  data_frame(YearAwarded = seq_along(.) + 1946, 
+             Adj = .)</code></pre>
 </div>
 
 

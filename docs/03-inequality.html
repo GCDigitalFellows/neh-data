@@ -15,7 +15,7 @@
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -97,34 +97,34 @@ button.code-folding-btn:focus {
 <style type="text/css">
 /* padding for bootstrap navbar */
 body {
-  padding-top: 51px;
+  padding-top: 66px;
   padding-bottom: 40px;
 }
 /* offset scroll position for anchor links (for fixed navbar)  */
 .section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 
 .section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 </style>
 
@@ -204,7 +204,7 @@ $(document).ready(function () {
 <pre class="r"><code>grants %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, appnumber, Funding) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   group_by(YearAwarded, appnumber) %&gt;%
   summarise(Funding = sum(Funding),
@@ -215,13 +215,12 @@ $(document).ready(function () {
     geom_point() +
     geom_line() +
     labs(title=&#39;Ratio of top and bottom 20% funded projects&#39;)</code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <pre class="r"><code>grants %&gt;%
   filter(Division != &#39;Challenge Grants&#39;) %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Institution, Funding) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   group_by(YearAwarded, Institution) %&gt;%
   summarise(Funding = sum(Funding),
@@ -232,13 +231,12 @@ $(document).ready(function () {
     geom_point() +
     geom_line() +
     labs(title=&#39;Comparing top 20% and bottom 20% funded institutions (w/o Challenge Grants)&#39;)</code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <pre class="r"><code>grants %&gt;%
   filter(Division != &#39;Challenge Grants&#39;) %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Institution, Funding) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   group_by(Institution) %&gt;%
   summarise(Funding = sum(Funding),
@@ -251,7 +249,6 @@ $(document).ready(function () {
     geom_bar(stat=&#39;identity&#39;) + 
     labs(title=&quot;Distribution by decile of funding accrued to institutions&quot;) +
     ylab(&#39;$&#39;)</code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 
 

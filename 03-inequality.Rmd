@@ -6,7 +6,7 @@ title: "Funding inequality"
 grants %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, appnumber, Funding) %>%
-  left_join(adj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding = Funding / Adj) %>%
   group_by(YearAwarded, appnumber) %>%
   summarise(Funding = sum(Funding),
@@ -24,7 +24,7 @@ grants %>%
   filter(Division != 'Challenge Grants') %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Institution, Funding) %>%
-  left_join(adj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding = Funding / Adj) %>%
   group_by(YearAwarded, Institution) %>%
   summarise(Funding = sum(Funding),
@@ -42,7 +42,7 @@ grants %>%
   filter(Division != 'Challenge Grants') %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Institution, Funding) %>%
-  left_join(adj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding = Funding / Adj) %>%
   group_by(Institution) %>%
   summarise(Funding = sum(Funding),

@@ -11,6 +11,4 @@ navbar:
       href: 03-inequality.html
 output: 
   html_document: 
-    toc: true
-    number_sections: true
     theme: readable

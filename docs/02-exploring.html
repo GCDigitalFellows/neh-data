@@ -15,7 +15,7 @@
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
@@ -97,34 +97,34 @@ button.code-folding-btn:focus {
 <style type="text/css">
 /* padding for bootstrap navbar */
 body {
-  padding-top: 51px;
+  padding-top: 66px;
   padding-bottom: 40px;
 }
 /* offset scroll position for anchor links (for fixed navbar)  */
 .section h1 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 
 .section h2 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h3 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h4 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h5 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 .section h6 {
-  padding-top: 56px;
-  margin-top: -56px;
+  padding-top: 71px;
+  margin-top: -71px;
 }
 </style>
 
@@ -201,29 +201,6 @@ $(document).ready(function () {
 </div>
 
 
-<pre class="r"><code>library(tidyverse)
-library(jsonlite)
-library(forcats)
-library(ggmap)
-library(broom)
-library(noncensus)
-library(blscrapeR)
-data(&quot;states&quot;)
-theme_set(theme_bw())</code></pre>
-<div id="definitions" class="section level3">
-<h3>Definitions</h3>
-<p>In defining the funding analyze, we learn from the <a href="https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf">NEH Grants Data Dictionary</a> that there are five different dollar amounts included in the grants dataset:</p>
-<ol style="list-style-type: decimal">
-<li>ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.)</li>
-<li>ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.)</li>
-<li>AwardOutright: Amount actually awarded (outright funds).</li>
-<li>AwardMatching: Amount actually awarded (matching funds).</li>
-<li>OriginalAmount: Original amount of grant (minus any grant supplements).</li>
-</ol>
-<p>We will define the relevant <code>funding</code> value as the sum of <code>ApprovedOutright</code> and <code>ApprovedMatching</code>. Furthermore, we will adjust funding dollars into 2016 dollars.</p>
-<pre class="r"><code>adj &lt;- inflation_adjust(2017) %&gt;%
-  data_frame(YearAwarded = seq_along(.) + 1946, Adj = .)</code></pre>
-</div>
 <div id="number-of-grants-awarded-over-time" class="section level3">
 <h3>Number of grants awarded over time</h3>
 <p>Funding trends can be broken into three periods:</p>
@@ -238,10 +215,10 @@ theme_set(theme_bw())</code></pre>
   ggplot(aes(x=YearAwarded, y=n)) +
     geom_point() +
     geom_line() +
-    scale_x_continuous(breaks=seq(1960,2017,by=5)) +
+    scale_x_discrete(breaks=seq(1960,2017,by=5)) +
     geom_vline(xintercept=1979, colour=&quot;red&quot;, linetype=&quot;longdash&quot;) +
     geom_vline(xintercept=1995, colour=&quot;red&quot;, linetype=&quot;longdash&quot;)</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 </div>
 <div id="amount-awarded-over-time" class="section level3">
 <h3>Amount awarded over time</h3>
@@ -254,7 +231,7 @@ theme_set(theme_bw())</code></pre>
   ggplot(aes(x=YearAwarded, y=Funding)) +
     geom_point() +
     geom_line()</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 <p>Being that we know that the number of grants has declined over time while little change is apparent in total funding, has the average amount of funding per project increased over this period? The following does seem to suggest so.</p>
 <pre class="r"><code>grants %&gt;%
   group_by(YearAwarded) %&gt;%
@@ -262,12 +239,12 @@ theme_set(theme_bw())</code></pre>
   ggplot(aes(x=YearAwarded, y=AvgFundingPerProject)) +
     geom_point() +
     geom_line()</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 <p>But that assumes that the dollar amounts in these two years are equivalent, but that ignores inflation. The change in amounts of funding approved over time is very different if the dollar amounts are adjusted for inflation. Instead of there being little change over the past 30 years, there is a readily apparent decline in funding, with 2016 being roughly one-third of the level of funding in 1980.</p>
 <pre class="r"><code>grants %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Funding) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj) %&gt;%
   mutate(Funding_2017_Adj = Funding / Adj) %&gt;%
   group_by(YearAwarded) %&gt;%
   summarise(Funding_Unadjusted = sum(Funding),
@@ -277,7 +254,7 @@ theme_set(theme_bw())</code></pre>
     geom_point() +
     geom_line()</code></pre>
 <pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>For the remaining analyses over time, we will use the inflation adjusted dollars.</p>
 </div>
 <div id="funding-for-different-divisions-over-time" class="section level3">
@@ -285,7 +262,7 @@ theme_set(theme_bw())</code></pre>
 <pre class="r"><code>grants %&gt;%  
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Division, Funding) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   group_by(YearAwarded, Division) %&gt;%
   summarise(Funding = sum(Funding)) %&gt;%
@@ -293,7 +270,7 @@ theme_set(theme_bw())</code></pre>
     geom_bar(stat=&#39;identity&#39;) +
     scale_fill_discrete(name=&#39;Division&#39;) </code></pre>
 <pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-5-1.png" width="960" /></p>
 </div>
 <div id="total-funding-by-state-and-decade" class="section level3">
 <h3>Total funding by state and decade</h3>
@@ -301,7 +278,7 @@ theme_set(theme_bw())</code></pre>
   filter(InstState %in% state.abb) %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching,
          Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %&gt;%
-  left_join(adj) %&gt;%
+  left_join(cpiadj) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   select(Decade, InstState, Funding) %&gt;%
   group_by(InstState, Decade) %&gt;%
@@ -311,7 +288,7 @@ theme_set(theme_bw())</code></pre>
     scale_fill_discrete(name=&#39;Decade&#39;) +
     coord_flip()</code></pre>
 <pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
 </div>
 
 

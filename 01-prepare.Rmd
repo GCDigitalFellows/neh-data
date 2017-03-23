@@ -2,17 +2,22 @@
 title: "Prepare data"
 ---
 
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+source('.Rprofile')
+knitr::opts_chunk$set(fig.width=12, fig.height=8,
+                      warning=FALSE, message=FALSE)
+```
+
 ### Downloading source files
 
 Fortunately, the NEH provides open access to their [grants data](https://securegrants.neh.gov/open/data/). We first use `rvest::read_html` to get a list of all the zipped grant files:
 
 ```{r}
 listnehgrantzips <- function() {
-  indexurl <- 'https://securegrants.neh.gov/open/data'
-  zipurls <- read_html(indexurl) %>%
+  zipurls <- read_html('https://securegrants.neh.gov/open/data') %>%
     html_nodes('a[href*="NEH_Grants"][href$=".zip"]') %>%
     html_attr('href') %>%
-    paste0(indexurl, .)
+    paste0('https://securegrants.neh.gov/', .)
 }
 ```
 
@@ -83,22 +88,42 @@ xmltodf <- function(xmlfile) {
 }
 ```
 
-We use the `xmltodf` function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data:
+We use the `xmltodf` function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data.
 
 ```{r}
-preparedata <- function() {
-  GRANTSFILEPATH <- '.data/grants.rda'
-  if(!file.exists(GRANTSFILEPATH)) {
-    grants <- xmlfiles %>% 
-      map(~ xmltodf(.)) %>%
-      bind_rows() %>%
-      mutate_if(is.character, funs(type.convert)) %>%
-      mutate_if(is.list, as.character) %>%
-      select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
-      distinct()
-    save(grants, file=GRANTSFILEPATH)
-  }
-  load(GRANTSFILEPATH)
+preparegrantsdata <- function() {
+  grants <- xmlfiles %>% 
+    map(~ xmltodf(.)) %>%
+    bind_rows() %>%
+    mutate_if(is.list, as.character) %>%
+    mutate_if(is.character, funs(type.convert)) %>%
+    select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
+    distinct()
 }
-preparedata()
+if(!file.exists('.RData')) {
+  grants <- preparegrantsdata()
+  save.image()
+} else {
+  load('.RData')
+}
+```
+
+### Caveats
+
+In defining NEH funding, the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) explains that there are five different dollar amounts included in the grants dataset:
+
+1. ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.) 
+2. ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.) 
+3. AwardOutright: Amount actually awarded (outright funds). 
+4. AwardMatching: Amount actually awarded (matching funds).
+5. OriginalAmount: Original amount of grant (minus any grant supplements).
+
+We will define the relevant `funding` value as the sum of `ApprovedOutright` and `ApprovedMatching`. 
+
+Furthermore, we will adjust funding dollars into 2016 dollars using the `blscrapeR::inflation_adjust` function:
+
+```{r warning=FALSE, message=FALSE, results='hide'}
+cpiadj <- inflation_adjust(2017) %>%
+  data_frame(YearAwarded = seq_along(.) + 1946, 
+             Adj = .)
 ```

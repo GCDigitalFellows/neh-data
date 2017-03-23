@@ -2,23 +2,6 @@
 title: "Exploring the data"
 ---
 
-### Definitions
-
-In defining the funding analyze, we learn from the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) that there are five different dollar amounts included in the grants dataset:
-
-1. ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.) 
-2. ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.) 
-3. AwardOutright: Amount actually awarded (outright funds). 
-4. AwardMatching: Amount actually awarded (matching funds).
-5. OriginalAmount: Original amount of grant (minus any grant supplements).
-
-We will define the relevant `funding` value as the sum of `ApprovedOutright` and `ApprovedMatching`. Furthermore, we will adjust funding dollars into 2016 dollars.
-
-```{r warning=FALSE, message=FALSE, results='hide'}
-adj <- inflation_adjust(2017) %>%
-  data_frame(YearAwarded = seq_along(.) + 1946, Adj = .)
-```
-
 ### Number of grants awarded over time
 
 Funding trends can be broken into three periods: 
@@ -34,7 +17,7 @@ grants %>%
   ggplot(aes(x=YearAwarded, y=n)) +
     geom_point() +
     geom_line() +
-    scale_x_continuous(breaks=seq(1960,2017,by=5)) +
+    scale_x_discrete(breaks=seq(1960,2017,by=5)) +
     geom_vline(xintercept=1979, colour="red", linetype="longdash") +
     geom_vline(xintercept=1995, colour="red", linetype="longdash")
 ```
@@ -71,7 +54,7 @@ But that assumes that the dollar amounts in these two years are equivalent, but 
 grants %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Funding) %>%
-  left_join(adj) %>%
+  left_join(cpiadj) %>%
   mutate(Funding_2017_Adj = Funding / Adj) %>%
   group_by(YearAwarded) %>%
   summarise(Funding_Unadjusted = sum(Funding),
@@ -90,7 +73,7 @@ For the remaining analyses over time, we will use the inflation adjusted dollars
 grants %>%  
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Division, Funding) %>%
-  left_join(adj) %>%
+  left_join(cpiadj) %>%
   mutate(Funding = Funding / Adj) %>%
   group_by(YearAwarded, Division) %>%
   summarise(Funding = sum(Funding)) %>%
@@ -106,7 +89,7 @@ grants %>%
   filter(InstState %in% state.abb) %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching,
          Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
-  left_join(adj) %>%
+  left_join(cpiadj) %>%
   mutate(Funding = Funding / Adj) %>%
   select(Decade, InstState, Funding) %>%
   group_by(InstState, Decade) %>%
