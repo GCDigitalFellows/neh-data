@@ -87,23 +87,12 @@ grants %>%
 The NEH data includes several values for `InstState` that are not valid US States:
 
 ```{r}
-```
-
-```{r}
 grants %>%
-  filter(InstState %in% state.abb) %>%
-  mutate(Funding = ApprovedOutright + ApprovedMatching,
-         Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
-  left_join(cpiadj, by = "YearAwarded") %>%
-  mutate(Funding = Funding / Adj) %>%
-  select(Decade, InstState, Funding) %>%
-  group_by(InstState, Decade) %>%
-  summarise(Funding = sum(Funding)) %>%
-  spread(Decade, Funding) %>%
-  kable()
+  distinct(InstState) %>%
+  filter(!(InstState %in% state.abb))
 ```
 
-Visually, we can see that even for the top funded states, levels have been declining since the 1980s.
+We see that even for the top funded states, levels have been declining since the 1980s.
 
 ```{r}
 grants %>%
@@ -127,4 +116,20 @@ grants %>%
     ylab('') +
     labs(title='Top 20 funded states totals by decade') +
     coord_flip()
+```
+
+For completeness, we can see the decade by decade aggregates for each state:
+
+```{r}
+grants %>%
+  filter(InstState %in% state.abb) %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching,
+         Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
+  mutate(Funding = Funding / Adj) %>%
+  select(Decade, InstState, Funding) %>%
+  group_by(InstState, Decade) %>%
+  summarise(Funding = sum(Funding)) %>%
+  spread(Decade, Funding) %>%
+  kable()
 ```
