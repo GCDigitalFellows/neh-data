@@ -1,15 +1,3 @@
 #### -- Packrat Autoloader (version 0.4.8-1) -- ####
 source("packrat/init.R")
 #### -- End Packrat Autoloader -- ####
-library(tidyverse)
-library(rvest)
-library(xml2)
-library(jsonlite)
-library(forcats)
-library(ggmap)
-library(broom)
-library(noncensus)
-library(blscrapeR)
-library(htmltools)
-data("states")
-theme_set(theme_bw())

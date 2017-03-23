@@ -54,7 +54,7 @@ But that assumes that the dollar amounts in these two years are equivalent, but 
 grants %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Funding) %>%
-  left_join(cpiadj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding_2017_Adj = Funding / Adj) %>%
   group_by(YearAwarded) %>%
   summarise(Funding_Unadjusted = sum(Funding),
@@ -73,7 +73,7 @@ For the remaining analyses over time, we will use the inflation adjusted dollars
 grants %>%  
   mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
   select(YearAwarded, Division, Funding) %>%
-  left_join(cpiadj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding = Funding / Adj) %>%
   group_by(YearAwarded, Division) %>%
   summarise(Funding = sum(Funding)) %>%
@@ -84,18 +84,47 @@ grants %>%
 
 ### Total funding by state and decade
 
-```{r, fig.width=10, fig.asp=4/1}
+The NEH data includes several values for `InstState` that are not valid US States:
+
+```{r}
+```
+
+```{r}
 grants %>%
   filter(InstState %in% state.abb) %>%
   mutate(Funding = ApprovedOutright + ApprovedMatching,
          Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
-  left_join(cpiadj) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
   mutate(Funding = Funding / Adj) %>%
   select(Decade, InstState, Funding) %>%
   group_by(InstState, Decade) %>%
   summarise(Funding = sum(Funding)) %>%
-  ggplot(aes(fct_reorder(InstState, -Funding), Funding, fill=Decade)) +
+  spread(Decade, Funding) %>%
+  kable()
+```
+
+Visually, we can see that even for the top funded states, levels have been declining since the 1980s.
+
+```{r}
+grants %>%
+  filter(InstState %in% state.abb) %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching,
+         Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
+  left_join(cpiadj, by = "YearAwarded") %>%
+  mutate(Funding = Funding / Adj) %>%
+  select(Decade, InstState, Funding) %>%
+  group_by(InstState, Decade) %>%
+  summarise(Funding = sum(Funding)) %>%
+  group_by(InstState) %>%
+  mutate(TotalFunding = sum(Funding)) %>%
+  ungroup() %>%
+  mutate(Rank = dense_rank(-TotalFunding)) %>%
+  filter(Rank <= 20) %>%
+  ggplot(aes(fct_reorder(InstState, Funding), Funding, fill=Decade)) +
     geom_bar(stat='identity') +
     scale_fill_discrete(name='Decade') +
+    xlab('') +
+    ylab('') +
+    labs(title='Top 20 funded states totals by decade') +
     coord_flip()
 ```

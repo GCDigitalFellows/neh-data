@@ -244,7 +244,7 @@ $(document).ready(function () {
 <pre class="r"><code>grants %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Funding) %&gt;%
-  left_join(cpiadj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding_2017_Adj = Funding / Adj) %&gt;%
   group_by(YearAwarded) %&gt;%
   summarise(Funding_Unadjusted = sum(Funding),
@@ -253,7 +253,6 @@ $(document).ready(function () {
   ggplot(aes(x=YearAwarded, y=Amount, colour=Type)) +
     geom_point() +
     geom_line()</code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
 <p><img src="02-exploring_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>For the remaining analyses over time, we will use the inflation adjusted dollars.</p>
 </div>
@@ -262,33 +261,517 @@ $(document).ready(function () {
 <pre class="r"><code>grants %&gt;%  
   mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
   select(YearAwarded, Division, Funding) %&gt;%
-  left_join(cpiadj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   group_by(YearAwarded, Division) %&gt;%
   summarise(Funding = sum(Funding)) %&gt;%
   ggplot(aes(x=YearAwarded, y=Funding, fill=fct_reorder(Division, -Funding))) +
     geom_bar(stat=&#39;identity&#39;) +
     scale_fill_discrete(name=&#39;Division&#39;) </code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
 <p><img src="02-exploring_files/figure-html/unnamed-chunk-5-1.png" width="960" /></p>
 </div>
 <div id="total-funding-by-state-and-decade" class="section level3">
 <h3>Total funding by state and decade</h3>
+<p>The NEH data includes several values for <code>InstState</code> that are not valid US States:</p>
 <pre class="r"><code>grants %&gt;%
   filter(InstState %in% state.abb) %&gt;%
   mutate(Funding = ApprovedOutright + ApprovedMatching,
          Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %&gt;%
-  left_join(cpiadj) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
   mutate(Funding = Funding / Adj) %&gt;%
   select(Decade, InstState, Funding) %&gt;%
   group_by(InstState, Decade) %&gt;%
   summarise(Funding = sum(Funding)) %&gt;%
-  ggplot(aes(fct_reorder(InstState, -Funding), Funding, fill=Decade)) +
+  spread(Decade, Funding) %&gt;%
+  kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">InstState</th>
+<th align="right">1960</th>
+<th align="right">1970</th>
+<th align="right">1980</th>
+<th align="right">1990</th>
+<th align="right">2000</th>
+<th align="right">2010</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">AK</td>
+<td align="right">605323.81</td>
+<td align="right">19413518</td>
+<td align="right">17127151</td>
+<td align="right">15097716</td>
+<td align="right">10156423</td>
+<td align="right">10269108</td>
+</tr>
+<tr class="even">
+<td align="left">AL</td>
+<td align="right">292880.95</td>
+<td align="right">16739336</td>
+<td align="right">21406409</td>
+<td align="right">19391419</td>
+<td align="right">9016062</td>
+<td align="right">7710971</td>
+</tr>
+<tr class="odd">
+<td align="left">AR</td>
+<td align="right">58142.86</td>
+<td align="right">10825047</td>
+<td align="right">17399735</td>
+<td align="right">13713440</td>
+<td align="right">10061826</td>
+<td align="right">9081468</td>
+</tr>
+<tr class="even">
+<td align="left">AZ</td>
+<td align="right">734637.14</td>
+<td align="right">26319070</td>
+<td align="right">30353762</td>
+<td align="right">25672697</td>
+<td align="right">18011986</td>
+<td align="right">6763693</td>
+</tr>
+<tr class="odd">
+<td align="left">CA</td>
+<td align="right">8533589.02</td>
+<td align="right">296234477</td>
+<td align="right">273478836</td>
+<td align="right">196463868</td>
+<td align="right">104807569</td>
+<td align="right">82571029</td>
+</tr>
+<tr class="even">
+<td align="left">CO</td>
+<td align="right">376364.29</td>
+<td align="right">37637201</td>
+<td align="right">29352144</td>
+<td align="right">23626912</td>
+<td align="right">15235300</td>
+<td align="right">9430231</td>
+</tr>
+<tr class="odd">
+<td align="left">CT</td>
+<td align="right">2573226.15</td>
+<td align="right">86185575</td>
+<td align="right">69741724</td>
+<td align="right">52460830</td>
+<td align="right">24215326</td>
+<td align="right">16843178</td>
+</tr>
+<tr class="even">
+<td align="left">DE</td>
+<td align="right">1425095.24</td>
+<td align="right">24957024</td>
+<td align="right">18443060</td>
+<td align="right">18298113</td>
+<td align="right">11123227</td>
+<td align="right">5997419</td>
+</tr>
+<tr class="odd">
+<td align="left">FL</td>
+<td align="right">612738.10</td>
+<td align="right">33074494</td>
+<td align="right">38156673</td>
+<td align="right">29541244</td>
+<td align="right">20931784</td>
+<td align="right">19784703</td>
+</tr>
+<tr class="even">
+<td align="left">GA</td>
+<td align="right">1415790.48</td>
+<td align="right">70140891</td>
+<td align="right">41679206</td>
+<td align="right">49046326</td>
+<td align="right">29368138</td>
+<td align="right">12659144</td>
+</tr>
+<tr class="odd">
+<td align="left">HI</td>
+<td align="right">453380.95</td>
+<td align="right">17352016</td>
+<td align="right">16916517</td>
+<td align="right">20561650</td>
+<td align="right">12181907</td>
+<td align="right">5363927</td>
+</tr>
+<tr class="even">
+<td align="left">IA</td>
+<td align="right">701700.00</td>
+<td align="right">32919090</td>
+<td align="right">27191919</td>
+<td align="right">18443581</td>
+<td align="right">12605132</td>
+<td align="right">6750511</td>
+</tr>
+<tr class="odd">
+<td align="left">ID</td>
+<td align="right">14285.71</td>
+<td align="right">13552963</td>
+<td align="right">12981947</td>
+<td align="right">10361855</td>
+<td align="right">7229101</td>
+<td align="right">3960317</td>
+</tr>
+<tr class="even">
+<td align="left">IL</td>
+<td align="right">2699000.95</td>
+<td align="right">189318425</td>
+<td align="right">158619314</td>
+<td align="right">120505996</td>
+<td align="right">80925361</td>
+<td align="right">34813514</td>
+</tr>
+<tr class="odd">
+<td align="left">IN</td>
+<td align="right">1266447.62</td>
+<td align="right">63735195</td>
+<td align="right">58169644</td>
+<td align="right">35267348</td>
+<td align="right">23394753</td>
+<td align="right">23368063</td>
+</tr>
+<tr class="even">
+<td align="left">KS</td>
+<td align="right">319857.14</td>
+<td align="right">30296723</td>
+<td align="right">26283684</td>
+<td align="right">21140521</td>
+<td align="right">10190489</td>
+<td align="right">9970496</td>
+</tr>
+<tr class="odd">
+<td align="left">KY</td>
+<td align="right">602876.19</td>
+<td align="right">25652522</td>
+<td align="right">24112216</td>
+<td align="right">17682462</td>
+<td align="right">12995158</td>
+<td align="right">4622575</td>
+</tr>
+<tr class="even">
+<td align="left">LA</td>
+<td align="right">324716.67</td>
+<td align="right">29920662</td>
+<td align="right">30077886</td>
+<td align="right">19305602</td>
+<td align="right">15305345</td>
+<td align="right">11539589</td>
+</tr>
+<tr class="odd">
+<td align="left">MA</td>
+<td align="right">7757990.95</td>
+<td align="right">226099093</td>
+<td align="right">225889678</td>
+<td align="right">169281408</td>
+<td align="right">97441086</td>
+<td align="right">67973183</td>
+</tr>
+<tr class="even">
+<td align="left">MD</td>
+<td align="right">2074661.43</td>
+<td align="right">65311110</td>
+<td align="right">81353633</td>
+<td align="right">56534423</td>
+<td align="right">32835113</td>
+<td align="right">24151141</td>
+</tr>
+<tr class="odd">
+<td align="left">ME</td>
+<td align="right">209285.71</td>
+<td align="right">19016029</td>
+<td align="right">23318645</td>
+<td align="right">19181550</td>
+<td align="right">17848351</td>
+<td align="right">6352340</td>
+</tr>
+<tr class="even">
+<td align="left">MI</td>
+<td align="right">2677060.48</td>
+<td align="right">72237590</td>
+<td align="right">57861502</td>
+<td align="right">54190086</td>
+<td align="right">29942892</td>
+<td align="right">24658573</td>
+</tr>
+<tr class="odd">
+<td align="left">MN</td>
+<td align="right">889485.71</td>
+<td align="right">65594009</td>
+<td align="right">52954164</td>
+<td align="right">35828228</td>
+<td align="right">25153671</td>
+<td align="right">14950578</td>
+</tr>
+<tr class="even">
+<td align="left">MO</td>
+<td align="right">295707.14</td>
+<td align="right">40811409</td>
+<td align="right">33269299</td>
+<td align="right">21886745</td>
+<td align="right">24085600</td>
+<td align="right">18242584</td>
+</tr>
+<tr class="odd">
+<td align="left">MS</td>
+<td align="right">418742.86</td>
+<td align="right">26694929</td>
+<td align="right">21862275</td>
+<td align="right">19956434</td>
+<td align="right">10294823</td>
+<td align="right">9573762</td>
+</tr>
+<tr class="even">
+<td align="left">MT</td>
+<td align="right">30500.00</td>
+<td align="right">15915398</td>
+<td align="right">12770466</td>
+<td align="right">12759221</td>
+<td align="right">7839682</td>
+<td align="right">7263637</td>
+</tr>
+<tr class="odd">
+<td align="left">NC</td>
+<td align="right">2718980.95</td>
+<td align="right">62251454</td>
+<td align="right">65846228</td>
+<td align="right">60383116</td>
+<td align="right">32144070</td>
+<td align="right">19242765</td>
+</tr>
+<tr class="even">
+<td align="left">ND</td>
+<td align="right">292861.90</td>
+<td align="right">17594823</td>
+<td align="right">14875617</td>
+<td align="right">11459671</td>
+<td align="right">6424518</td>
+<td align="right">8504730</td>
+</tr>
+<tr class="odd">
+<td align="left">NE</td>
+<td align="right">196778.57</td>
+<td align="right">23516279</td>
+<td align="right">21724672</td>
+<td align="right">14345834</td>
+<td align="right">15201095</td>
+<td align="right">7200394</td>
+</tr>
+<tr class="even">
+<td align="left">NH</td>
+<td align="right">14285.71</td>
+<td align="right">18626652</td>
+<td align="right">29283154</td>
+<td align="right">20673342</td>
+<td align="right">11218957</td>
+<td align="right">4602294</td>
+</tr>
+<tr class="odd">
+<td align="left">NJ</td>
+<td align="right">5555826.19</td>
+<td align="right">80220775</td>
+<td align="right">77519710</td>
+<td align="right">54317869</td>
+<td align="right">25947974</td>
+<td align="right">17880442</td>
+</tr>
+<tr class="even">
+<td align="left">NM</td>
+<td align="right">93333.33</td>
+<td align="right">27658941</td>
+<td align="right">26820801</td>
+<td align="right">24190897</td>
+<td align="right">14164450</td>
+<td align="right">8856848</td>
+</tr>
+<tr class="odd">
+<td align="left">NV</td>
+<td align="right">316904.76</td>
+<td align="right">12504637</td>
+<td align="right">10656156</td>
+<td align="right">11543587</td>
+<td align="right">5049177</td>
+<td align="right">6825929</td>
+</tr>
+<tr class="even">
+<td align="left">NY</td>
+<td align="right">19569484.84</td>
+<td align="right">614332132</td>
+<td align="right">523783125</td>
+<td align="right">297648479</td>
+<td align="right">164291762</td>
+<td align="right">116903967</td>
+</tr>
+<tr class="odd">
+<td align="left">OH</td>
+<td align="right">1868014.29</td>
+<td align="right">92700672</td>
+<td align="right">72632625</td>
+<td align="right">46835778</td>
+<td align="right">39722663</td>
+<td align="right">15167357</td>
+</tr>
+<tr class="even">
+<td align="left">OK</td>
+<td align="right">567573.81</td>
+<td align="right">23185223</td>
+<td align="right">23956961</td>
+<td align="right">13984166</td>
+<td align="right">11121530</td>
+<td align="right">4481742</td>
+</tr>
+<tr class="odd">
+<td align="left">OR</td>
+<td align="right">358538.10</td>
+<td align="right">26808560</td>
+<td align="right">35048155</td>
+<td align="right">25969333</td>
+<td align="right">14208169</td>
+<td align="right">12061812</td>
+</tr>
+<tr class="even">
+<td align="left">PA</td>
+<td align="right">3023404.41</td>
+<td align="right">140411775</td>
+<td align="right">149780516</td>
+<td align="right">79815094</td>
+<td align="right">67320683</td>
+<td align="right">41990038</td>
+</tr>
+<tr class="odd">
+<td align="left">RI</td>
+<td align="right">461314.29</td>
+<td align="right">29678781</td>
+<td align="right">31300324</td>
+<td align="right">29070588</td>
+<td align="right">17449847</td>
+<td align="right">6205466</td>
+</tr>
+<tr class="even">
+<td align="left">SC</td>
+<td align="right">258752.38</td>
+<td align="right">20534453</td>
+<td align="right">32362674</td>
+<td align="right">23149451</td>
+<td align="right">12491918</td>
+<td align="right">7104669</td>
+</tr>
+<tr class="odd">
+<td align="left">SD</td>
+<td align="right">667828.57</td>
+<td align="right">16281811</td>
+<td align="right">14866254</td>
+<td align="right">9934305</td>
+<td align="right">5642177</td>
+<td align="right">5983856</td>
+</tr>
+<tr class="even">
+<td align="left">TN</td>
+<td align="right">1753192.86</td>
+<td align="right">54787758</td>
+<td align="right">40645022</td>
+<td align="right">28245262</td>
+<td align="right">17108237</td>
+<td align="right">14789728</td>
+</tr>
+<tr class="odd">
+<td align="left">TX</td>
+<td align="right">986640.48</td>
+<td align="right">74264356</td>
+<td align="right">73895628</td>
+<td align="right">75643843</td>
+<td align="right">43969840</td>
+<td align="right">29001011</td>
+</tr>
+<tr class="even">
+<td align="left">UT</td>
+<td align="right">199192.86</td>
+<td align="right">17766314</td>
+<td align="right">16805980</td>
+<td align="right">13922175</td>
+<td align="right">9201301</td>
+<td align="right">7244258</td>
+</tr>
+<tr class="odd">
+<td align="left">VA</td>
+<td align="right">2794117.62</td>
+<td align="right">81257086</td>
+<td align="right">90610997</td>
+<td align="right">85451539</td>
+<td align="right">61032360</td>
+<td align="right">35351737</td>
+</tr>
+<tr class="even">
+<td align="left">VT</td>
+<td align="right">132335.71</td>
+<td align="right">19652600</td>
+<td align="right">22192838</td>
+<td align="right">19011141</td>
+<td align="right">10300643</td>
+<td align="right">9284664</td>
+</tr>
+<tr class="odd">
+<td align="left">WA</td>
+<td align="right">945707.14</td>
+<td align="right">54869635</td>
+<td align="right">46565600</td>
+<td align="right">26685568</td>
+<td align="right">21324350</td>
+<td align="right">9963702</td>
+</tr>
+<tr class="even">
+<td align="left">WI</td>
+<td align="right">1374636.19</td>
+<td align="right">59935251</td>
+<td align="right">58443262</td>
+<td align="right">40664573</td>
+<td align="right">21644723</td>
+<td align="right">16565710</td>
+</tr>
+<tr class="odd">
+<td align="left">WV</td>
+<td align="right">354980.95</td>
+<td align="right">12886425</td>
+<td align="right">15622030</td>
+<td align="right">10892596</td>
+<td align="right">5642048</td>
+<td align="right">7080763</td>
+</tr>
+<tr class="even">
+<td align="left">WY</td>
+<td align="right">224110.00</td>
+<td align="right">12754788</td>
+<td align="right">11246819</td>
+<td align="right">11155278</td>
+<td align="right">6969390</td>
+<td align="right">3290673</td>
+</tr>
+</tbody>
+</table>
+<p>Visually, we can see that even for the top funded states, levels have been declining since the 1980s.</p>
+<pre class="r"><code>grants %&gt;%
+  filter(InstState %in% state.abb) %&gt;%
+  mutate(Funding = ApprovedOutright + ApprovedMatching,
+         Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %&gt;%
+  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
+  mutate(Funding = Funding / Adj) %&gt;%
+  select(Decade, InstState, Funding) %&gt;%
+  group_by(InstState, Decade) %&gt;%
+  summarise(Funding = sum(Funding)) %&gt;%
+  group_by(InstState) %&gt;%
+  mutate(TotalFunding = sum(Funding)) %&gt;%
+  ungroup() %&gt;%
+  mutate(Rank = dense_rank(-TotalFunding)) %&gt;%
+  filter(Rank &lt;= 20) %&gt;%
+  ggplot(aes(fct_reorder(InstState, Funding), Funding, fill=Decade)) +
     geom_bar(stat=&#39;identity&#39;) +
     scale_fill_discrete(name=&#39;Decade&#39;) +
+    xlab(&#39;&#39;) +
+    ylab(&#39;&#39;) +
+    labs(title=&#39;Top 20 funded states totals by decade&#39;) +
     coord_flip()</code></pre>
-<pre><code>## Joining, by = &quot;YearAwarded&quot;</code></pre>
-<p><img src="02-exploring_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
+<p><img src="02-exploring_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 </div>
 
 

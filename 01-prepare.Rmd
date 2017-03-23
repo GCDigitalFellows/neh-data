@@ -4,6 +4,19 @@ title: "Prepare data"
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
 source('.Rprofile')
+library(tidyverse)
+library(rvest)
+library(xml2)
+library(jsonlite)
+library(forcats)
+library(ggmap)
+library(broom)
+library(noncensus)
+library(blscrapeR)
+library(htmltools)
+library(knitr)
+data("states")
+theme_set(theme_bw())
 knitr::opts_chunk$set(fig.width=12, fig.height=8,
                       warning=FALSE, message=FALSE)
 ```
