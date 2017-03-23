@@ -1,6 +1,5 @@
 ---
 title: "Funding inequality"
-output: html_document
 ---
 
 ```{r}

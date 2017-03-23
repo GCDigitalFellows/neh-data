@@ -1,19 +1,6 @@
 ---
 title: "Exploring the data"
-output: html_document
 ---
-
-```{r setup, warning=FALSE, message=FALSE, results='hide'}
-library(tidyverse)
-library(jsonlite)
-library(forcats)
-library(ggmap)
-library(broom)
-library(noncensus)
-library(blscrapeR)
-data("states")
-theme_set(theme_bw())
-```
 
 ### Definitions
 
