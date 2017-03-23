@@ -1,0 +1,105 @@
+---
+title: "Prepare data"
+output: html_document
+---
+
+```{r setup, warning=FALSE, message=FALSE, results='hide'}
+library(tidyverse)
+library(xml2)
+DATADIR <- './.data'
+```
+
+### Download XML files
+
+```{r}
+# grant data is available online at https://securegrants.neh.gov/open/data/
+urls <- c('https://securegrants.neh.gov/Open/data/NEH_Grants1960s.zip',
+          'https://securegrants.neh.gov/Open/data/NEH_Grants1970s.zip',
+          'https://securegrants.neh.gov/Open/data/NEH_Grants1980s.zip',
+          'https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip',
+          'https://securegrants.neh.gov/Open/data/NEH_Grants2000s.zip',
+          'https://securegrants.neh.gov/Open/data/NEH_Grants2010s.zip')
+# intermediate files will be saved between steps
+dir.create(DATADIR, showWarnings = FALSE)
+# download zip files, extract the xml contained within them, and build a list of xml files
+processurl <- function(url) {
+  xmlfile <- gsub(".zip", ".xml", basename(url))
+  # only download if xml file doesn't already exist
+  if(!file.exists(file.path(DATADIR, xmlfile))) {
+    tf <- tempfile()
+    download.file(url, tf, quiet = TRUE)
+    unzip(tf, xmlfile, exdir=DATADIR)
+  }
+  xmlfile
+}
+xmlfiles <- urls %>% map(~ processurl(.))
+```
+
+### Pulling data out of XMLs
+
+Grants have `AppNumber` attributes:
+
+```{r}
+read_xml('.data/NEH_Grants2000s.xml') %>% 
+  xml_find_all('./Grant') %>%
+  head(1) %>%
+  xml_attrs()
+```
+
+Grants have 28 fields:
+
+```{r}
+read_xml('.data/NEH_Grants2000s.xml') %>% 
+  xml_find_all('./Grant') %>%
+  head(1) %>%
+  xml_children() %>%
+  xml_name()
+```
+
+Of those 28 fields, `Participant` and `Discipline` are nested nodes. The `Discipline` node is simply a list of `Name` nodes.
+
+```{r}
+read_xml('.data/NEH_Grants2000s.xml') %>% 
+  xml_find_all('./Grant/*[count(*) > 0]') %>%
+  head(5)
+```
+
+Following [How to tame XML with nested data frames and purrr](https://github.com/jennybc/manipulate-xml-with-purrr-dplyr-tidyr#readme), we create the following function to transform our XML data to a data frame:
+
+```{r}
+xmltodf <- function(xmlfile) {
+  grants <- read_xml(xmlfile) %>% xml_find_all('./Grant')
+  df <- data_frame(row = seq_along(grants),
+                   nodeset = grants) %>%
+    mutate(col_name_raw = nodeset %>% map(~ xml_children(.)) %>% map(~ xml_name(.)),
+           cell_text = nodeset %>% map(~ xml_children(.)) %>% map(~ xml_text(.)),
+           appnumber = nodeset %>% xml_attr('AppNumber'),
+           i = nodeset %>% map(~ xml_children(.)) %>% map(~ seq_along(.))) %>%
+    select(row, i, appnumber, col_name_raw, cell_text) %>%
+    unnest() %>%
+    group_by(row, appnumber, col_name_raw) %>% 
+    summarise(cell_text = toString(cell_text)) %>%
+    ungroup() %>%
+    spread(col_name_raw, cell_text)
+  df
+}
+```
+
+### Combine grants data from XML
+
+Using the `xmltodf` function defined above, we go through all the XML files we have downloaded and convert them to data frames that we finally combine into one.
+
+```{r}
+GRANTSFILEPATH <- '.data/grants.rda'
+if(!file.exists(GRANTSFILEPATH)) {
+  grants <- xmlfiles %>% 
+    map(~ xmltodf(.)) %>%
+    bind_rows() %>%
+    mutate_if(is.character, funs(type.convert)) %>%
+    mutate_if(is.list, as.character) %>%
+    select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
+    distinct()
+  save(grants, file=GRANTSFILEPATH)
+}
+load(GRANTSFILEPATH)
+```

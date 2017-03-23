@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Prepare data</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Visualizing NEH</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="01-prepare.html">Preparing data</a>
+</li>
+<li>
+  <a href="02-exploring.html">Exploring data</a>
+</li>
+<li>
+  <a href="03-inequality.html">Funding inequality</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Prepare data</h1>
+
+</div>
+
+
+<pre class="r"><code>library(tidyverse)
+library(xml2)
+DATADIR &lt;- &#39;./.data&#39;</code></pre>
+<div id="download-xml-files" class="section level3">
+<h3>Download XML files</h3>
+<pre class="r"><code># grant data is available online at https://securegrants.neh.gov/open/data/
+urls &lt;- c(&#39;https://securegrants.neh.gov/Open/data/NEH_Grants1960s.zip&#39;,
+          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1970s.zip&#39;,
+          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1980s.zip&#39;,
+          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip&#39;,
+          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants2000s.zip&#39;,
+          &#39;https://securegrants.neh.gov/Open/data/NEH_Grants2010s.zip&#39;)
+# intermediate files will be saved between steps
+dir.create(DATADIR, showWarnings = FALSE)
+# download zip files, extract the xml contained within them, and build a list of xml files
+processurl &lt;- function(url) {
+  xmlfile &lt;- gsub(&quot;.zip&quot;, &quot;.xml&quot;, basename(url))
+  # only download if xml file doesn&#39;t already exist
+  if(!file.exists(file.path(DATADIR, xmlfile))) {
+    tf &lt;- tempfile()
+    download.file(url, tf, quiet = TRUE)
+    unzip(tf, xmlfile, exdir=DATADIR)
+  }
+  xmlfile
+}
+xmlfiles &lt;- urls %&gt;% map(~ processurl(.))</code></pre>
+</div>
+<div id="pulling-data-out-of-xmls" class="section level3">
+<h3>Pulling data out of XMLs</h3>
+<p>Grants have <code>AppNumber</code> attributes:</p>
+<pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
+  xml_find_all(&#39;./Grant&#39;) %&gt;%
+  head(1) %&gt;%
+  xml_attrs()</code></pre>
+<pre><code>## [[1]]
+##     AppNumber 
+## &quot;CH-20781-05&quot;</code></pre>
+<p>Grants have 28 fields:</p>
+<pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
+  xml_find_all(&#39;./Grant&#39;) %&gt;%
+  head(1) %&gt;%
+  xml_children() %&gt;%
+  xml_name()</code></pre>
+<pre><code>##  [1] &quot;ApplicantType&quot;     &quot;Institution&quot;       &quot;OrganizationType&quot; 
+##  [4] &quot;InstCity&quot;          &quot;InstState&quot;         &quot;InstPostalCode&quot;   
+##  [7] &quot;InstCountry&quot;       &quot;CouncilDate&quot;       &quot;YearAwarded&quot;      
+## [10] &quot;ProjectTitle&quot;      &quot;Program&quot;           &quot;Division&quot;         
+## [13] &quot;ApprovedOutright&quot;  &quot;ApprovedMatching&quot;  &quot;AwardOutright&quot;    
+## [16] &quot;AwardMatching&quot;     &quot;OriginalAmount&quot;    &quot;BeginGrant&quot;       
+## [19] &quot;EndGrant&quot;          &quot;ProjectDesc&quot;       &quot;ToSupport&quot;        
+## [22] &quot;PrimaryDiscipline&quot; &quot;SupplementCount&quot;   &quot;ParticipantCount&quot; 
+## [25] &quot;Participant&quot;       &quot;Participant&quot;       &quot;DisciplineCount&quot;  
+## [28] &quot;Discipline&quot;</code></pre>
+<p>Of those 28 fields, <code>Participant</code> and <code>Discipline</code> are nested nodes. The <code>Discipline</code> node is simply a list of <code>Name</code> nodes.</p>
+<pre class="r"><code>read_xml(&#39;.data/NEH_Grants2000s.xml&#39;) %&gt;% 
+  xml_find_all(&#39;./Grant/*[count(*) &gt; 0]&#39;) %&gt;%
+  head(5)</code></pre>
+<pre><code>## {xml_nodeset (5)}
+## [1] &lt;Participant&gt;\n  &lt;Firstname&gt;Ruby&lt;/Firstname&gt;\n  &lt;Lastname&gt;Buck&lt;/Last ...
+## [2] &lt;Participant&gt;\n  &lt;Firstname&gt;Catherine&lt;/Firstname&gt;\n  &lt;Lastname&gt;Court ...
+## [3] &lt;Discipline&gt;\n  &lt;Name&gt;Music History and Criticism&lt;/Name&gt;\n&lt;/Discipline&gt;
+## [4] &lt;Participant&gt;\n  &lt;Firstname&gt;Robert&lt;/Firstname&gt;\n  &lt;Lastname&gt;Wilson&lt;/ ...
+## [5] &lt;Participant&gt;\n  &lt;Firstname&gt;Craig&lt;/Firstname&gt;\n  &lt;Lastname&gt;Pascoe&lt;/L ...</code></pre>
+<p>Following <a href="https://github.com/jennybc/manipulate-xml-with-purrr-dplyr-tidyr#readme">How to tame XML with nested data frames and purrr</a>, we create the following function to transform our XML data to a data frame:</p>
+<pre class="r"><code>xmltodf &lt;- function(xmlfile) {
+  grants &lt;- read_xml(xmlfile) %&gt;% xml_find_all(&#39;./Grant&#39;)
+  df &lt;- data_frame(row = seq_along(grants),
+                   nodeset = grants) %&gt;%
+    mutate(col_name_raw = nodeset %&gt;% map(~ xml_children(.)) %&gt;% map(~ xml_name(.)),
+           cell_text = nodeset %&gt;% map(~ xml_children(.)) %&gt;% map(~ xml_text(.)),
+           appnumber = nodeset %&gt;% xml_attr(&#39;AppNumber&#39;),
+           i = nodeset %&gt;% map(~ xml_children(.)) %&gt;% map(~ seq_along(.))) %&gt;%
+    select(row, i, appnumber, col_name_raw, cell_text) %&gt;%
+    unnest() %&gt;%
+    group_by(row, appnumber, col_name_raw) %&gt;% 
+    summarise(cell_text = toString(cell_text)) %&gt;%
+    ungroup() %&gt;%
+    spread(col_name_raw, cell_text)
+  df
+}</code></pre>
+</div>
+<div id="combine-grants-data-from-xml" class="section level3">
+<h3>Combine grants data from XML</h3>
+<p>Using the <code>xmltodf</code> function defined above, we go through all the XML files we have downloaded and convert them to data frames that we finally combine into one.</p>
+<pre class="r"><code>GRANTSFILEPATH &lt;- &#39;.data/grants.rda&#39;
+if(!file.exists(GRANTSFILEPATH)) {
+  grants &lt;- xmlfiles %&gt;% 
+    map(~ xmltodf(.)) %&gt;%
+    bind_rows() %&gt;%
+    mutate_if(is.character, funs(type.convert)) %&gt;%
+    mutate_if(is.list, as.character) %&gt;%
+    select(-ProjectDesc, -ToSupport) %&gt;% # FIXME: These fields are causing duplicates
+    distinct()
+  save(grants, file=GRANTSFILEPATH)
+}
+load(GRANTSFILEPATH)</code></pre>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

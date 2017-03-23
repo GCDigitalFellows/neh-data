@@ -1,0 +1,131 @@
+---
+title: "Exploring the data"
+output: html_document
+---
+
+```{r setup, warning=FALSE, message=FALSE, results='hide'}
+library(tidyverse)
+library(jsonlite)
+library(forcats)
+library(ggmap)
+library(broom)
+library(noncensus)
+library(blscrapeR)
+data("states")
+theme_set(theme_bw())
+```
+
+### Definitions
+
+In defining the funding analyze, we learn from the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) that there are five different dollar amounts included in the grants dataset:
+
+1. ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.) 
+2. ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.) 
+3. AwardOutright: Amount actually awarded (outright funds). 
+4. AwardMatching: Amount actually awarded (matching funds).
+5. OriginalAmount: Original amount of grant (minus any grant supplements).
+
+We will define the relevant `funding` value as the sum of `ApprovedOutright` and `ApprovedMatching`. Furthermore, we will adjust funding dollars into 2016 dollars.
+
+```{r warning=FALSE, message=FALSE, results='hide'}
+adj <- inflation_adjust(2017) %>%
+  data_frame(YearAwarded = seq_along(.) + 1946, Adj = .)
+```
+
+### Number of grants awarded over time
+
+Funding trends can be broken into three periods: 
+
+1. initial increase over 1965-1979; 
+2. step down over 1980-1995; 
+3. further step down over 1996-2016
+
+```{r}
+grants %>%
+  group_by(YearAwarded) %>%
+  count %>%
+  ggplot(aes(x=YearAwarded, y=n)) +
+    geom_point() +
+    geom_line() +
+    scale_x_continuous(breaks=seq(1960,2017,by=5)) +
+    geom_vline(xintercept=1979, colour="red", linetype="longdash") +
+    geom_vline(xintercept=1995, colour="red", linetype="longdash")
+```
+
+### Amount awarded over time
+
+Aggregating all the funding approved per year, it would seem as many dollars were distributed in 2016 as there were in 1980.
+
+```{r}
+grants %>%
+  filter(YearAwarded < 2017) %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  group_by(YearAwarded) %>%
+  summarise(Funding = sum(Funding)) %>%
+  ggplot(aes(x=YearAwarded, y=Funding)) +
+    geom_point() +
+    geom_line()
+```
+
+Being that we know that the number of grants has declined over time while little change is apparent in total funding, has the average amount of funding per project increased over this period? The following does seem to suggest so.
+
+```{r}
+grants %>%
+  group_by(YearAwarded) %>%
+  summarise(AvgFundingPerProject = sum(AwardOutright) / n()) %>%
+  ggplot(aes(x=YearAwarded, y=AvgFundingPerProject)) +
+    geom_point() +
+    geom_line()
+```
+
+But that assumes that the dollar amounts in these two years are equivalent, but that ignores inflation. The change in amounts of funding approved over time is very different if the dollar amounts are adjusted for inflation. Instead of there being little change over the past 30 years, there is a readily apparent decline in funding, with 2016 being roughly one-third of the level of funding in 1980.
+
+```{r}
+grants %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  select(YearAwarded, Funding) %>%
+  left_join(adj) %>%
+  mutate(Funding_2017_Adj = Funding / Adj) %>%
+  group_by(YearAwarded) %>%
+  summarise(Funding_Unadjusted = sum(Funding),
+            Funding_Adjusted = sum(Funding_2017_Adj)) %>%
+  gather(Type, Amount, -YearAwarded) %>%
+  ggplot(aes(x=YearAwarded, y=Amount, colour=Type)) +
+    geom_point() +
+    geom_line()
+```
+
+For the remaining analyses over time, we will use the inflation adjusted dollars.
+
+### Funding for different divisions over time
+
+```{r, fig.width=10, fig.asp=1/3}
+grants %>%  
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  select(YearAwarded, Division, Funding) %>%
+  left_join(adj) %>%
+  mutate(Funding = Funding / Adj) %>%
+  group_by(YearAwarded, Division) %>%
+  summarise(Funding = sum(Funding)) %>%
+  ggplot(aes(x=YearAwarded, y=Funding, fill=fct_reorder(Division, -Funding))) +
+    geom_bar(stat='identity') +
+    scale_fill_discrete(name='Division') 
+```
+
+### Total funding by state and decade
+
+```{r, fig.width=10, fig.asp=4/1}
+grants %>%
+  filter(InstState %in% state.abb) %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching,
+         Decade = as.factor(YearAwarded - (YearAwarded %% 10))) %>%
+  left_join(adj) %>%
+  mutate(Funding = Funding / Adj) %>%
+  select(Decade, InstState, Funding) %>%
+  group_by(InstState, Decade) %>%
+  summarise(Funding = sum(Funding)) %>%
+  ggplot(aes(fct_reorder(InstState, -Funding), Funding, fill=Decade)) +
+    geom_bar(stat='identity') +
+    scale_fill_discrete(name='Decade') +
+    coord_flip()
+```

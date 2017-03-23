@@ -1,0 +1,8 @@
+---
+title: "Visualizing NEH"
+output: html_document
+---
+
+The *Visualizing NEH& project is part of a collaboration of the [Graduate Center Digital Fellows](https://digitalfellows.commons.gc.cuny.edu/). The recently proposed budget by the Trump administration calls for the elimination of the National Endowment of Humanities (NEH) and the National Endowment of the Arts (NEA).
+
+All the code for this project are available on Github at [GCDigitalFellows/visualizing-neh](https://github.com/GCDigitalFellows/visualizing-neh). If you have any issues with the data or presentation, please [submit issues](https://github.com/GCDigitalFellows/visualizing-neh/issues/new) through Github.

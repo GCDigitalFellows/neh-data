@@ -1,0 +1,59 @@
+---
+title: "Funding inequality"
+output: html_document
+---
+
+```{r}
+grants %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  select(YearAwarded, appnumber, Funding) %>%
+  left_join(adj) %>%
+  mutate(Funding = Funding / Adj) %>%
+  group_by(YearAwarded, appnumber) %>%
+  summarise(Funding = sum(Funding),
+            n = n()) %>%
+  do( tidy(t(quantile(.$Funding, prob = c(.2, 0.8)))) ) %>%
+  mutate(PalmaRatio = `X80.` / `X20.`) %>%
+  ggplot(aes(YearAwarded, PalmaRatio)) +
+    geom_point() +
+    geom_line() +
+    labs(title='Ratio of top and bottom 20% funded projects')
+```
+
+```{r}
+grants %>%
+  filter(Division != 'Challenge Grants') %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  select(YearAwarded, Institution, Funding) %>%
+  left_join(adj) %>%
+  mutate(Funding = Funding / Adj) %>%
+  group_by(YearAwarded, Institution) %>%
+  summarise(Funding = sum(Funding),
+            n = n()) %>%
+  do( tidy(t(quantile(.$Funding, prob = c(.2, 0.8)))) ) %>%
+  mutate(PalmaRatio = `X80.` / `X20.`) %>%
+  ggplot(aes(YearAwarded, PalmaRatio)) +
+    geom_point() +
+    geom_line() +
+    labs(title='Comparing top 20% and bottom 20% funded institutions (w/o Challenge Grants)')
+```
+
+```{r}
+grants %>%
+  filter(Division != 'Challenge Grants') %>%
+  mutate(Funding = ApprovedOutright + ApprovedMatching) %>%
+  select(YearAwarded, Institution, Funding) %>%
+  left_join(adj) %>%
+  mutate(Funding = Funding / Adj) %>%
+  group_by(Institution) %>%
+  summarise(Funding = sum(Funding),
+            n = n()) %>%
+  mutate(Decile = cut(Funding, breaks = quantile(Funding, probs = seq(0, 1, 0.1)), include.lowest = TRUE, labels = 1:10)) %>%
+  group_by(Decile) %>%
+  summarise(Funding = sum(Funding),
+            n = n()) %>%
+  ggplot(aes(Decile, Funding)) +
+    geom_bar(stat='identity') + 
+    labs(title="Distribution by decile of funding accrued to institutions") +
+    ylab('$')
+```
