@@ -1,62 +1,60 @@
 ---
 title: "Prepare data"
-output: html_document
 ---
 
-```{r setup, warning=FALSE, message=FALSE, results='hide'}
-library(tidyverse)
-library(xml2)
-DATADIR <- './.data'
-```
+### Downloading source files
 
-### Download XML files
+Fortunately, the NEH provides open access to their [grants data](https://securegrants.neh.gov/open/data/). We first use `rvest::read_html` to get a list of all the zipped grant files:
 
 ```{r}
-# grant data is available online at https://securegrants.neh.gov/open/data/
-urls <- c('https://securegrants.neh.gov/Open/data/NEH_Grants1960s.zip',
-          'https://securegrants.neh.gov/Open/data/NEH_Grants1970s.zip',
-          'https://securegrants.neh.gov/Open/data/NEH_Grants1980s.zip',
-          'https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip',
-          'https://securegrants.neh.gov/Open/data/NEH_Grants2000s.zip',
-          'https://securegrants.neh.gov/Open/data/NEH_Grants2010s.zip')
-# intermediate files will be saved between steps
-dir.create(DATADIR, showWarnings = FALSE)
-# download zip files, extract the xml contained within them, and build a list of xml files
-processurl <- function(url) {
+listnehgrantzips <- function() {
+  indexurl <- 'https://securegrants.neh.gov/open/data'
+  zipurls <- read_html(indexurl) %>%
+    html_nodes('a[href*="NEH_Grants"][href$=".zip"]') %>%
+    html_attr('href') %>%
+    paste0(indexurl, .)
+}
+```
+
+Each grant zip file contains an XML data file and an XML Schema Definition file, which we can ignore for our current purposes. We save the XML to a directory in our project directory:
+
+```{r}
+downloadxml <- function(url) {
+  DATADIR <- './.data'
+  # intermediate files will be saved between steps
+  dir.create(DATADIR, showWarnings = FALSE)
   xmlfile <- gsub(".zip", ".xml", basename(url))
   # only download if xml file doesn't already exist
   if(!file.exists(file.path(DATADIR, xmlfile))) {
     tf <- tempfile()
     download.file(url, tf, quiet = TRUE)
     unzip(tf, xmlfile, exdir=DATADIR)
+  } else {
+    file.path(DATADIR, xmlfile)
   }
-  xmlfile
 }
-xmlfiles <- urls %>% map(~ processurl(.))
 ```
 
-### Pulling data out of XMLs
-
-Grants have `AppNumber` attributes:
+Finally, we pull these two functions together using `purrr::map` to download each file:
 
 ```{r}
-read_xml('.data/NEH_Grants2000s.xml') %>% 
-  xml_find_all('./Grant') %>%
-  head(1) %>%
-  xml_attrs()
+xmlfiles <- listnehgrantzips() %>% map(~ downloadxml(.)) %>% unlist
 ```
 
-Grants have 28 fields:
+### Extracting data from source files
+
+The XML format can be difficult to load into a data table for analysis. It requires us to transform its nested structure into a unnested table form, with rows and columns. We use the `xml2::read_xml` function to pull nodes out of the XML tree structure:
 
 ```{r}
-read_xml('.data/NEH_Grants2000s.xml') %>% 
+read_xml(tail(xmlfiles, 1)) %>% 
   xml_find_all('./Grant') %>%
   head(1) %>%
-  xml_children() %>%
-  xml_name()
+  xml_children()
 ```
 
-Of those 28 fields, `Participant` and `Discipline` are nested nodes. The `Discipline` node is simply a list of `Name` nodes.
+We need to pull out the `AppNumber` attribute since this is the unique number used by the NEH to identify awarded grants.
+
+Of the 28 fields that are in the nodeset for each Grant, `Participant` and `Discipline` are nested nodes. The `Discipline` node is simply a list of `Name` nodes.
 
 ```{r}
 read_xml('.data/NEH_Grants2000s.xml') %>% 
@@ -85,21 +83,22 @@ xmltodf <- function(xmlfile) {
 }
 ```
 
-### Combine grants data from XML
-
-Using the `xmltodf` function defined above, we go through all the XML files we have downloaded and convert them to data frames that we finally combine into one.
+We use the `xmltodf` function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data:
 
 ```{r}
-GRANTSFILEPATH <- '.data/grants.rda'
-if(!file.exists(GRANTSFILEPATH)) {
-  grants <- xmlfiles %>% 
-    map(~ xmltodf(.)) %>%
-    bind_rows() %>%
-    mutate_if(is.character, funs(type.convert)) %>%
-    mutate_if(is.list, as.character) %>%
-    select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
-    distinct()
-  save(grants, file=GRANTSFILEPATH)
+preparedata <- function() {
+  GRANTSFILEPATH <- '.data/grants.rda'
+  if(!file.exists(GRANTSFILEPATH)) {
+    grants <- xmlfiles %>% 
+      map(~ xmltodf(.)) %>%
+      bind_rows() %>%
+      mutate_if(is.character, funs(type.convert)) %>%
+      mutate_if(is.list, as.character) %>%
+      select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
+      distinct()
+    save(grants, file=GRANTSFILEPATH)
+  }
+  load(GRANTSFILEPATH)
 }
-load(GRANTSFILEPATH)
+preparedata()
 ```
