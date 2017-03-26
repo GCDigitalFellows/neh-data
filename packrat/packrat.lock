@@ -69,7 +69,7 @@ Package: broom
 Source: CRAN
 Version: 0.4.2
 Hash: 7ebcffa46afb467e3f3c5687946f6e1a
-Requires: plyr, nlme, psych, stringr, dplyr, reshape2, tidyr
+Requires: dplyr, nlme, plyr, psych, reshape2, stringr, tidyr
 
 Package: caTools
 Source: CRAN
@@ -135,15 +135,15 @@ Package: ggmap
 Source: CRAN
 Version: 2.6.1
 Hash: 3e5545418aab1ad8e47c218236dd4f0b
-Requires: digest, jpeg, png, proto, rjson, plyr, mapproj, RgoogleMaps,
-    scales, geosphere, reshape2, ggplot2
+Requires: RgoogleMaps, digest, geosphere, ggplot2, jpeg, mapproj, plyr,
+    png, proto, reshape2, rjson, scales
 
 Package: ggplot2
 Source: CRAN
 Version: 2.2.1
 Hash: 46e5cb78836848aa44655e577433f54b
-Requires: MASS, digest, gtable, lazyeval, plyr, tibble, scales,
-    reshape2
+Requires: MASS, digest, gtable, lazyeval, plyr, reshape2, scales,
+    tibble
 
 Package: gtable
 Source: CRAN
@@ -154,7 +154,7 @@ Package: haven
 Source: CRAN
 Version: 1.0.0
 Hash: c0a627663eb2abb6172350fa8c4f1167
-Requires: BH, Rcpp, hms, tibble, readr
+Requires: BH, Rcpp, hms, readr, tibble
 
 Package: highr
 Source: CRAN
@@ -251,7 +251,7 @@ Package: modelr
 Source: CRAN
 Version: 0.1.0
 Hash: 7c9848bf4d734f38b8ce91022d8de949
-Requires: lazyeval, magrittr, tibble, dplyr, purrr, tidyr, broom
+Requires: broom, dplyr, lazyeval, magrittr, purrr, tibble, tidyr
 
 Package: munsell
 Source: CRAN
@@ -306,7 +306,7 @@ Package: purrr
 Source: CRAN
 Version: 0.2.2
 Hash: 9f218b40dee7fe7f942039f974bd98b8
-Requires: BH, Rcpp, lazyeval, magrittr, dplyr
+Requires: BH, Rcpp, dplyr, lazyeval, magrittr
 
 Package: readr
 Source: CRAN
@@ -348,13 +348,13 @@ Package: rvest
 Source: CRAN
 Version: 0.3.2
 Hash: c69f7526520bad66fd2111ebe8b1364b
-Requires: magrittr, xml2, httr, selectr
+Requires: httr, magrittr, selectr, xml2
 
 Package: scales
 Source: CRAN
 Version: 0.4.1
 Hash: 2d008b6e3fb9938255669ddf3c85f1f3
-Requires: RColorBrewer, Rcpp, dichromat, labeling, plyr, munsell
+Requires: RColorBrewer, Rcpp, dichromat, labeling, munsell, plyr
 
 Package: selectr
 Source: CRAN
@@ -389,15 +389,15 @@ Package: tidyr
 Source: CRAN
 Version: 0.6.1
 Hash: 18d0eb5251ee17447cb84df1a7f010b2
-Requires: Rcpp, lazyeval, magrittr, stringi, tibble, dplyr
+Requires: Rcpp, dplyr, lazyeval, magrittr, stringi, tibble
 
 Package: tidyverse
 Source: CRAN
 Version: 1.1.1
 Hash: 72d5fada870c90b835bbdfc281283c99
-Requires: hms, jsonlite, magrittr, readxl, xml2, tibble, httr, stringr,
-    dplyr, forcats, readr, lubridate, purrr, tidyr, haven, ggplot2,
-    rvest, broom, modelr
+Requires: broom, dplyr, forcats, ggplot2, haven, hms, httr, jsonlite,
+    lubridate, magrittr, modelr, purrr, readr, readxl, rvest, stringr,
+    tibble, tidyr, xml2
 
 Package: xml2
 Source: CRAN
