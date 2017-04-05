@@ -2,7 +2,12 @@
 title: "Visualizing NEH"
 ---
 
-![](images/gcdi.png)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+```
+
+![](images/gcdi.png){#header .header}
 
 This project is part of a collaboration by several [Digital Fellows](https://digitalfellows.commons.gc.cuny.edu/) of the [Graduate Center Digital Initiatives](https://gcdi.commons.gc.cuny.edu/). Our efforts were initiated in light of the recently proposed budget by the Trump administration that called for the elimination of the National Endowment of Humanities (NEH) and the National Endowment of the Arts (NEA).
 

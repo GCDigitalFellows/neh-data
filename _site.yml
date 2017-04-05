@@ -1,14 +1,7 @@
 name: "visualizing-neh"
 output_dir: "docs"
-navbar:
-  title: "Visualizing NEH"
-  left:
-    - text: "Preparing data"
-      href: 01-prepare.html
-    - text: "Exploring data"
-      href: 02-exploring.html
-    - text: "Funding inequality"
-      href: 03-inequality.html
 output: 
   html_document: 
-    theme: readable
+    theme: paper
+    highlight: tango
+    css: workshop.css

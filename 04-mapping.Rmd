@@ -1,0 +1,14 @@
+---
+title: "Mapping"
+---
+
+For mapping purposes, we can geocode the zip codes provided in the dataset. Since we are `taRifx.geo::geocode` with the Bing mapping service, you will need to add the Bing Map API key.
+
+```
+geolocations <- grants %>%
+  distinct(InstPostalCode) %>%
+  head(10) %>%
+  rowwise() %>% 
+  mutate(LatLong = toString(taRifx.geo::geocode(InstPostalCode, service='bing'))) %>%
+  separate(LatLong, c('Lat', 'Long'), sep=',')
+```

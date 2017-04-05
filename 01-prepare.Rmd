@@ -121,16 +121,6 @@ if(!file.exists('.RData')) {
 }
 ```
 
-For mapping purposes, we can geocode the zip codes provided in the dataset. Since we are `taRifx.geo::geocode` with the Bing mapping service, you will need to add the Bing Map API key.
-
-```{r warning=FALSE, message=FALSE, results='hide'}
-geolocations <- grants %>%
-  distinct(InstPostalCode) %>%
-  rowwise() %>% 
-  mutate(LatLong = toString(taRifx.geo::geocode(InstPostalCode, service='bing'))) %>%
-  separate(LatLong, c('Lat', 'Long'), sep=',')
-```
-
 ### Caveats
 
 In defining NEH funding, the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) explains that there are five different dollar amounts included in the grants dataset:

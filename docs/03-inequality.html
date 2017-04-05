@@ -15,28 +15,56 @@
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="site_libs/bootstrap-3.3.5/css/readable.min.css" rel="stylesheet" />
+<link href="site_libs/bootstrap-3.3.5/css/paper.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/default.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+
 
 <style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; } /* Keyword */
+code > span.dt { color: #204a87; } /* DataType */
+code > span.dv { color: #0000cf; } /* DecVal */
+code > span.bn { color: #0000cf; } /* BaseN */
+code > span.fl { color: #0000cf; } /* Float */
+code > span.ch { color: #4e9a06; } /* Char */
+code > span.st { color: #4e9a06; } /* String */
+code > span.co { color: #8f5902; font-style: italic; } /* Comment */
+code > span.ot { color: #8f5902; } /* Other */
+code > span.al { color: #ef2929; } /* Alert */
+code > span.fu { color: #000000; } /* Function */
+code > span.er { color: #a40000; font-weight: bold; } /* Error */
+code > span.wa { color: #8f5902; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #000000; } /* Constant */
+code > span.sc { color: #000000; } /* SpecialChar */
+code > span.vs { color: #4e9a06; } /* VerbatimString */
+code > span.ss { color: #4e9a06; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #000000; } /* Variable */
+code > span.cf { color: #204a87; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #ce5c00; font-weight: bold; } /* Operator */
+code > span.pp { color: #8f5902; font-style: italic; } /* Preprocessor */
+code > span.ex { } /* Extension */
+code > span.at { color: #c4a000; } /* Attribute */
+code > span.do { color: #8f5902; font-weight: bold; font-style: italic; } /* Documentation */
+code > span.an { color: #8f5902; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #8f5902; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #8f5902; font-weight: bold; font-style: italic; } /* Information */
+</style>
 <style type="text/css">
   pre:not([class]) {
     background-color: white;
   }
 </style>
-<script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
-}
-</script>
-
 
 
 <style type="text/css">
@@ -66,6 +94,7 @@ h6 {
 }
 </style>
 
+<link rel="stylesheet" href="workshop.css" type="text/css" />
 
 </head>
 
@@ -97,34 +126,34 @@ button.code-folding-btn:focus {
 <style type="text/css">
 /* padding for bootstrap navbar */
 body {
-  padding-top: 66px;
+  padding-top: 64px;
   padding-bottom: 40px;
 }
 /* offset scroll position for anchor links (for fixed navbar)  */
 .section h1 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 
 .section h2 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 .section h3 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 .section h4 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 .section h5 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 .section h6 {
-  padding-top: 71px;
-  margin-top: -71px;
+  padding-top: 69px;
+  margin-top: -69px;
 }
 </style>
 
@@ -162,35 +191,31 @@ $(document).ready(function () {
 
 
 
-
-<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
-  <div class="container">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="index.html">Visualizing NEH</a>
+        <!-- NOTE: add "navbar-inverse" class for an alternate navbar background -->
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      <a class="navbar-brand" href="#">
+        <img alt="GC Digital Initiatives" src="images/gcdi-logo.svg" style="height: 100%; padding: 5px; width: auto;">
+      </a>
     </div>
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-        <li>
-  <a href="01-prepare.html">Preparing data</a>
-</li>
-<li>
-  <a href="02-exploring.html">Exploring data</a>
-</li>
-<li>
-  <a href="03-inequality.html">Funding inequality</a>
-</li>
+        <li><a href="01-prepare.html">Preparing data</a></li>
+        <li><a href="02-exploring.html">Exploring data</a></li>        
+        <li><a href="03-inequality.html">Funding inequality</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        
+        <li><a href="https://github.com/GCDigitalFellows/visualizing-neh"><i class="fa fa-2x fa-github" aria-hidden="true"></i></a></li>
       </ul>
     </div><!--/.nav-collapse -->
-  </div><!--/.container -->
-</div><!--/.navbar -->
+  </div>
+</nav>
 
 <div class="fluid-row" id="header">
 
@@ -201,54 +226,54 @@ $(document).ready(function () {
 </div>
 
 
-<pre class="r"><code>grants %&gt;%
-  mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
-  select(YearAwarded, appnumber, Funding) %&gt;%
-  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
-  mutate(Funding = Funding / Adj) %&gt;%
-  group_by(YearAwarded, appnumber) %&gt;%
-  summarise(Funding = sum(Funding),
-            n = n()) %&gt;%
-  do( tidy(t(quantile(.$Funding, prob = c(.2, 0.8)))) ) %&gt;%
-  mutate(PalmaRatio = `X80.` / `X20.`) %&gt;%
-  ggplot(aes(YearAwarded, PalmaRatio)) +
-    geom_point() +
-    geom_line() +
-    labs(title=&#39;Ratio of top and bottom 20% funded projects&#39;)</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grants %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> ApprovedOutright +<span class="st"> </span>ApprovedMatching) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(YearAwarded, appnumber, Funding) %&gt;%
+<span class="st">  </span><span class="kw">left_join</span>(cpiadj, <span class="dt">by =</span> <span class="st">&quot;YearAwarded&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> Funding /<span class="st"> </span>Adj) %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(YearAwarded, appnumber) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Funding =</span> <span class="kw">sum</span>(Funding),
+            <span class="dt">n =</span> <span class="kw">n</span>()) %&gt;%
+<span class="st">  </span><span class="kw">do</span>( <span class="kw">tidy</span>(<span class="kw">t</span>(<span class="kw">quantile</span>(.$Funding, <span class="dt">prob =</span> <span class="kw">c</span>(.<span class="dv">2</span>, <span class="fl">0.8</span>)))) ) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">PalmaRatio =</span> <span class="st">`</span><span class="dt">X80.</span><span class="st">`</span> /<span class="st"> `</span><span class="dt">X20.</span><span class="st">`</span>) %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(YearAwarded, PalmaRatio)) +
+<span class="st">    </span><span class="kw">geom_point</span>() +
+<span class="st">    </span><span class="kw">geom_line</span>() +
+<span class="st">    </span><span class="kw">labs</span>(<span class="dt">title=</span><span class="st">&#39;Ratio of top and bottom 20% funded projects&#39;</span>)</code></pre></div>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<pre class="r"><code>grants %&gt;%
-  filter(Division != &#39;Challenge Grants&#39;) %&gt;%
-  mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
-  select(YearAwarded, Institution, Funding) %&gt;%
-  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
-  mutate(Funding = Funding / Adj) %&gt;%
-  group_by(YearAwarded, Institution) %&gt;%
-  summarise(Funding = sum(Funding),
-            n = n()) %&gt;%
-  do( tidy(t(quantile(.$Funding, prob = c(.2, 0.8)))) ) %&gt;%
-  mutate(PalmaRatio = `X80.` / `X20.`) %&gt;%
-  ggplot(aes(YearAwarded, PalmaRatio)) +
-    geom_point() +
-    geom_line() +
-    labs(title=&#39;Comparing top 20% and bottom 20% funded institutions (w/o Challenge Grants)&#39;)</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grants %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(Division !=<span class="st"> &#39;Challenge Grants&#39;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> ApprovedOutright +<span class="st"> </span>ApprovedMatching) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(YearAwarded, Institution, Funding) %&gt;%
+<span class="st">  </span><span class="kw">left_join</span>(cpiadj, <span class="dt">by =</span> <span class="st">&quot;YearAwarded&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> Funding /<span class="st"> </span>Adj) %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(YearAwarded, Institution) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Funding =</span> <span class="kw">sum</span>(Funding),
+            <span class="dt">n =</span> <span class="kw">n</span>()) %&gt;%
+<span class="st">  </span><span class="kw">do</span>( <span class="kw">tidy</span>(<span class="kw">t</span>(<span class="kw">quantile</span>(.$Funding, <span class="dt">prob =</span> <span class="kw">c</span>(.<span class="dv">2</span>, <span class="fl">0.8</span>)))) ) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">PalmaRatio =</span> <span class="st">`</span><span class="dt">X80.</span><span class="st">`</span> /<span class="st"> `</span><span class="dt">X20.</span><span class="st">`</span>) %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(YearAwarded, PalmaRatio)) +
+<span class="st">    </span><span class="kw">geom_point</span>() +
+<span class="st">    </span><span class="kw">geom_line</span>() +
+<span class="st">    </span><span class="kw">labs</span>(<span class="dt">title=</span><span class="st">&#39;Comparing top 20% and bottom 20% funded institutions (w/o Challenge Grants)&#39;</span>)</code></pre></div>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
-<pre class="r"><code>grants %&gt;%
-  filter(Division != &#39;Challenge Grants&#39;) %&gt;%
-  mutate(Funding = ApprovedOutright + ApprovedMatching) %&gt;%
-  select(YearAwarded, Institution, Funding) %&gt;%
-  left_join(cpiadj, by = &quot;YearAwarded&quot;) %&gt;%
-  mutate(Funding = Funding / Adj) %&gt;%
-  group_by(Institution) %&gt;%
-  summarise(Funding = sum(Funding),
-            n = n()) %&gt;%
-  mutate(Decile = cut(Funding, breaks = quantile(Funding, probs = seq(0, 1, 0.1)), include.lowest = TRUE, labels = 1:10)) %&gt;%
-  group_by(Decile) %&gt;%
-  summarise(Funding = sum(Funding),
-            n = n()) %&gt;%
-  ggplot(aes(Decile, Funding)) +
-    geom_bar(stat=&#39;identity&#39;) + 
-    labs(title=&quot;Distribution by decile of funding accrued to institutions&quot;) +
-    ylab(&#39;$&#39;)</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grants %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(Division !=<span class="st"> &#39;Challenge Grants&#39;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> ApprovedOutright +<span class="st"> </span>ApprovedMatching) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(YearAwarded, Institution, Funding) %&gt;%
+<span class="st">  </span><span class="kw">left_join</span>(cpiadj, <span class="dt">by =</span> <span class="st">&quot;YearAwarded&quot;</span>) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Funding =</span> Funding /<span class="st"> </span>Adj) %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(Institution) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Funding =</span> <span class="kw">sum</span>(Funding),
+            <span class="dt">n =</span> <span class="kw">n</span>()) %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">Decile =</span> <span class="kw">cut</span>(Funding, <span class="dt">breaks =</span> <span class="kw">quantile</span>(Funding, <span class="dt">probs =</span> <span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.1</span>)), <span class="dt">include.lowest =</span> <span class="ot">TRUE</span>, <span class="dt">labels =</span> <span class="dv">1</span>:<span class="dv">10</span>)) %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(Decile) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">Funding =</span> <span class="kw">sum</span>(Funding),
+            <span class="dt">n =</span> <span class="kw">n</span>()) %&gt;%
+<span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(Decile, Funding)) +
+<span class="st">    </span><span class="kw">geom_bar</span>(<span class="dt">stat=</span><span class="st">&#39;identity&#39;</span>) +<span class="st"> </span>
+<span class="st">    </span><span class="kw">labs</span>(<span class="dt">title=</span><span class="st">&quot;Distribution by decile of funding accrued to institutions&quot;</span>) +
+<span class="st">    </span><span class="kw">ylab</span>(<span class="st">&#39;$&#39;</span>)</code></pre></div>
 <p><img src="03-inequality_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
 
 

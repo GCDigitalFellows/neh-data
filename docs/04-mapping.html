@@ -11,7 +11,7 @@
 
 
 
-<title>Visualizing NEH</title>
+<title>Mapping</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,7 +20,6 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 
 
 
@@ -179,21 +178,18 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Visualizing NEH</h1>
+<h1 class="title toc-ignore">Mapping</h1>
 
 </div>
 
 
-<div class="figure">
-<img src="images/gcdi.png" id="header" class="header" />
-
-</div>
-<p>This project is part of a collaboration by several <a href="https://digitalfellows.commons.gc.cuny.edu/">Digital Fellows</a> of the <a href="https://gcdi.commons.gc.cuny.edu/">Graduate Center Digital Initiatives</a>. Our efforts were initiated in light of the recently proposed budget by the Trump administration that called for the elimination of the National Endowment of Humanities (NEH) and the National Endowment of the Arts (NEA).</p>
-<p>All the code for this project are available on Github at <a href="https://github.com/GCDigitalFellows/visualizing-neh">GCDigitalFellows/visualizing-neh</a>. If you have any issues with the data or presentation, please <a href="https://github.com/GCDigitalFellows/visualizing-neh/issues/new">submit issues</a> through Github.</p>
-<p>Contributors:</p>
-<ul>
-<li><a href="https://github.com/majorgreys">Tahir Butt</a></li>
-</ul>
+<p>For mapping purposes, we can geocode the zip codes provided in the dataset. Since we are <code>taRifx.geo::geocode</code> with the Bing mapping service, you will need to add the Bing Map API key.</p>
+<pre><code>geolocations &lt;- grants %&gt;%
+  distinct(InstPostalCode) %&gt;%
+  head(10) %&gt;%
+  rowwise() %&gt;% 
+  mutate(LatLong = toString(taRifx.geo::geocode(InstPostalCode, service=&#39;bing&#39;))) %&gt;%
+  separate(LatLong, c(&#39;Lat&#39;, &#39;Long&#39;), sep=&#39;,&#39;)</code></pre>
 
 
 
