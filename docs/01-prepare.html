@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -310,25 +310,66 @@ $(document).ready(function () {
 <span class="st">    </span><span class="kw">spread</span>(col_name_raw, cell_text)
   df
 }</code></pre></div>
-<p>We use the <code>xmltodf</code> function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">preparegrantsdata &lt;-<span class="st"> </span>function() {
-  grants &lt;-<span class="st"> </span>xmlfiles %&gt;%<span class="st"> </span>
-<span class="st">    </span><span class="kw">map</span>(~<span class="st"> </span><span class="kw">xmltodf</span>(.)) %&gt;%
-<span class="st">    </span><span class="kw">bind_rows</span>() %&gt;%
-<span class="st">    </span><span class="kw">mutate_if</span>(is.list, as.character) %&gt;%
-<span class="st">    </span><span class="kw">mutate_if</span>(is.character, <span class="kw">funs</span>(type.convert)) %&gt;%
-<span class="st">    </span><span class="kw">select</span>(-ProjectDesc, -ToSupport) %&gt;%<span class="st"> </span><span class="co"># FIXME: These fields are causing duplicates</span>
-<span class="st">    </span><span class="kw">distinct</span>()
-}
-if(!<span class="kw">file.exists</span>(<span class="st">&#39;.RData&#39;</span>)) {
-  grants &lt;-<span class="st"> </span><span class="kw">preparegrantsdata</span>()
+<p>We use the <code>xmltodf</code> function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one. We save the data to the file system to avoid redoing this process each time we run these scripts.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if(!<span class="kw">file.exists</span>(<span class="st">&#39;.RData&#39;</span>)) {
+  nehgrants &lt;-<span class="st"> </span>xmlfiles %&gt;%<span class="st"> </span>
+<span class="st">      </span><span class="kw">map</span>(~<span class="st"> </span><span class="kw">xmltodf</span>(.)) %&gt;%
+<span class="st">      </span><span class="kw">bind_rows</span>()
   <span class="kw">save.image</span>()
 } else {
   <span class="kw">load</span>(<span class="st">&#39;.RData&#39;</span>)
 }</code></pre></div>
 </div>
-<div id="caveats" class="section level3">
-<h3>Caveats</h3>
+<div id="cleaning" class="section level3">
+<h3>Cleaning</h3>
+<p>The full NEH grant dataset contains 63228 distinct <code>AppNumber</code> values.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nehgrants %&gt;%
+<span class="st">  </span><span class="kw">select</span>(appnumber) %&gt;%
+<span class="st">  </span>distinct %&gt;%
+<span class="st">  </span>count</code></pre></div>
+<pre><code>## # A tibble: 1 × 1
+##       n
+##   &lt;int&gt;
+## 1 63228</code></pre>
+<p>We would expect the <code>AppNumber</code> to be unique, but 310 of those 63228 (0.4%) have duplicate entries.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nehgrants %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(appnumber) %&gt;%
+<span class="st">  </span>count %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(n &gt;<span class="st"> </span><span class="dv">1</span>) %&gt;%
+<span class="st">  </span>count</code></pre></div>
+<pre><code>## # A tibble: 1 × 1
+##      nn
+##   &lt;int&gt;
+## 1   310</code></pre>
+<p>The problem seems to lie in inconsistent values in the <code>ToSupport</code> column:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nehgrants %&gt;%
+<span class="st">  </span><span class="kw">select</span>(-row) %&gt;%
+<span class="st">  </span><span class="kw">gather</span>(column, value, -appnumber) %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(appnumber, column) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">n=</span><span class="kw">n_distinct</span>(value)) %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(n&gt;<span class="dv">1</span>) %&gt;%
+<span class="st">  </span><span class="kw">ungroup</span>() %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(column) %&gt;%
+<span class="st">  </span>count</code></pre></div>
+<pre><code>## # A tibble: 1 × 2
+##      column    nn
+##       &lt;chr&gt; &lt;int&gt;
+## 1 ToSupport    47</code></pre>
+<p>Therefore, to “clean” our data we will for the time being remove the column(s) creating unnnecessary duplicates and convert column types appropriately:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grants &lt;-<span class="st"> </span>nehgrants %&gt;%
+<span class="st">  </span><span class="kw">select</span>(-row, -ToSupport) %&gt;%
+<span class="st">  </span><span class="kw">mutate_if</span>(is.character, <span class="kw">funs</span>(type.convert)) %&gt;%
+<span class="st">  </span><span class="kw">distinct</span>()</code></pre></div>
+<p>So, now the duplicate row issue is resolved:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grants %&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(appnumber) %&gt;%
+<span class="st">  </span>count %&gt;%
+<span class="st">  </span><span class="kw">filter</span>(n &gt;<span class="st"> </span><span class="dv">1</span>)</code></pre></div>
+<pre><code>## # A tibble: 0 × 2
+## # ... with 2 variables: appnumber &lt;fctr&gt;, n &lt;int&gt;</code></pre>
+</div>
+<div id="funding-adjusted-for-inflation" class="section level3">
+<h3>Funding adjusted for inflation</h3>
 <p>In defining NEH funding, the <a href="https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf">NEH Grants Data Dictionary</a> explains that there are five different dollar amounts included in the grants dataset:</p>
 <ol style="list-style-type: decimal">
 <li>ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.)</li>
@@ -342,6 +383,26 @@ if(!<span class="kw">file.exists</span>(<span class="st">&#39;.RData&#39;</span>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cpiadj &lt;-<span class="st"> </span><span class="kw">inflation_adjust</span>(<span class="dv">2017</span>) %&gt;%
 <span class="st">  </span><span class="kw">data_frame</span>(<span class="dt">YearAwarded =</span> <span class="kw">seq_along</span>(.) +<span class="st"> </span><span class="dv">1946</span>, 
              <span class="dt">Adj =</span> .)</code></pre></div>
+</div>
+<div id="participants" class="section level3">
+<h3>Participants</h3>
+<p>Though the bulk of projects have only one participant, there are a number more that have more than that.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">nehgrants %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(ParticipantCount) %&gt;%<span class="st"> </span>
+<span class="st">  </span>count</code></pre></div>
+<pre><code>## # A tibble: 10 × 2
+##    ParticipantCount     n
+##               &lt;chr&gt; &lt;int&gt;
+## 1                 0  3067
+## 2                 1 58662
+## 3                 2  1547
+## 4                 3   300
+## 5                 4   114
+## 6                 5    54
+## 7                 6    15
+## 8                 7     3
+## 9                 8     6
+## 10                9     2</code></pre>
 </div>
 
 

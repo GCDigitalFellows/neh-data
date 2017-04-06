@@ -101,27 +101,74 @@ xmltodf <- function(xmlfile) {
 }
 ```
 
-We use the `xmltodf` function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one, which we save to the file system to avoid redoing the same steps as we continue our exploration of the data.
+We use the `xmltodf` function to through all the XML files we have downloaded and transform them into data frames that we finally combine into one. We save the data to the file system to avoid redoing this process each time we run these scripts.
 
 ```{r}
-preparegrantsdata <- function() {
-  grants <- xmlfiles %>% 
-    map(~ xmltodf(.)) %>%
-    bind_rows() %>%
-    mutate_if(is.list, as.character) %>%
-    mutate_if(is.character, funs(type.convert)) %>%
-    select(-ProjectDesc, -ToSupport) %>% # FIXME: These fields are causing duplicates
-    distinct()
-}
 if(!file.exists('.RData')) {
-  grants <- preparegrantsdata()
+  nehgrants <- xmlfiles %>% 
+      map(~ xmltodf(.)) %>%
+      bind_rows()
   save.image()
 } else {
   load('.RData')
 }
 ```
 
-### Caveats
+### Cleaning
+
+The full NEH grant dataset contains 63228 distinct `AppNumber` values.
+
+```{r}
+nehgrants %>%
+  select(appnumber) %>%
+  distinct %>%
+  count
+```
+
+We would expect the `AppNumber` to be unique, but 310 of those 63228 (0.4%) have duplicate entries.
+
+```{r}
+nehgrants %>%
+  group_by(appnumber) %>%
+  count %>%
+  filter(n > 1) %>%
+  count
+```
+
+The problem seems to lie in inconsistent values in the `ToSupport` column:
+
+```{r}
+nehgrants %>%
+  select(-row) %>%
+  gather(column, value, -appnumber) %>%
+  group_by(appnumber, column) %>%
+  summarise(n=n_distinct(value)) %>%
+  filter(n>1) %>%
+  ungroup() %>%
+  group_by(column) %>%
+  count
+```
+
+Therefore, to "clean" our data we will for the time being remove the column(s) creating unnnecessary duplicates and convert column types appropriately:
+
+```{r}
+grants <- nehgrants %>%
+  select(-row, -ToSupport) %>%
+  mutate_if(is.character, funs(type.convert)) %>%
+  distinct()
+```
+
+So, now the duplicate row issue is resolved:
+
+```{r}
+grants %>%
+  group_by(appnumber) %>%
+  count %>%
+  filter(n > 1) %>%
+  count
+```
+
+### Funding adjusted for inflation
 
 In defining NEH funding, the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) explains that there are five different dollar amounts included in the grants dataset:
 
@@ -139,4 +186,14 @@ Furthermore, we will adjust funding dollars into 2016 dollars using the `blscrap
 cpiadj <- inflation_adjust(2017) %>%
   data_frame(YearAwarded = seq_along(.) + 1946, 
              Adj = .)
+```
+
+### Participants
+
+Though the bulk of projects have only one participant, there are a number more that have more than that.
+
+```{r}
+nehgrants %>% 
+  group_by(ParticipantCount) %>% 
+  count
 ```
