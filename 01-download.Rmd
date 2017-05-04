@@ -1,0 +1,248 @@
+---
+title: "Download data"
+date: \today
+---
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, results='hide'}
+library(tidyverse)
+library(rvest)
+library(xml2)
+library(jsonlite)
+library(forcats)
+library(ggmap)
+library(broom)
+library(noncensus)
+library(blscrapeR)
+library(htmltools)
+library(knitr)
+data("states")
+theme_set(theme_bw())
+knitr::opts_chunk$set(fig.width=12, fig.height=8,
+                      warning=FALSE, message=FALSE)
+```
+
+### Downloading source files
+
+Fortunately, the good people at the NEH provide open access to their historical [grants data](https://securegrants.neh.gov/open/data/) dating back to the 1960s. 
+
+We begin by using the R package `rvest` to scrape the index webpage of the open data for all URLs to the zipped grant files.
+
+```{r}
+read_html('https://securegrants.neh.gov/open/data') %>%
+  html_nodes('a[href*="NEH_Grants"]') %>%
+  html_attr('href') %>%
+  paste0('https://securegrants.neh.gov/', .)
+```
+
+Each grant zip file contains an XML data file and an XML Schema Definition file, which we can ignore for our current purposes. Included among these zip files are flattened versions of the XML data extracts. Unfortunately not all flattened files are uploaded in the same way, some are available as zipped files, others as just xml, or both together.
+
+```{r}
+read_html('https://securegrants.neh.gov/open/data') %>%
+  html_nodes('a[href*="NEH_Grants"][href*="_Flat."]') %>%
+  html_attr('href') %>%
+  paste0('https://securegrants.neh.gov/', .)
+```
+
+```{r}
+read_html('https://securegrants.neh.gov/open/data') %>%
+  html_nodes('a[href*="NEH_Grants"][href$=".zip"]:not([href$="_Flat.zip"])') %>%
+  html_attr('href') %>%
+  paste0('https://securegrants.neh.gov/', .)
+```
+
+We define a function to extract the xml document from a URL to one of the zip files:
+
+```{r}
+read_xml_neh <- function(url) {
+  if(tools::file_ext(url) == 'zip') {
+    # we expect each zip file to contain an xml file of the same basename
+    xmlfile <- gsub(".zip", ".xml", basename(url))
+    # download url to a temporary file
+    tf <- tempfile()
+    download.file(url, tf, quiet = TRUE)
+    # unzip xml to a temporary directory
+    dir <- tempdir()
+    unzip(tf, xmlfile, exdir=dir) 
+    # return xml nodeset using xml2::read_xml
+    read_xml(paste0(dir, '/', xmlfile))
+  } else {
+    xmlfile <- read_xml(url)
+  }
+}
+```
+
+We can test this out by loading one the XML files from the URLs we scraped off the NEH website:
+
+```{r}
+read_xml_neh('https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip')
+```
+
+### Extracting XML documents
+
+The XML format can be difficult to load into a data table for analysis. It requires us to transform its nested structure into a unnested table form, with rows and columns. We use the `xml2::xml_find_all` function to pull all the `Grant` nodes out of the XML document. Here we inspect the first node and its contents:
+
+```{r}
+read_xml_neh('https://securegrants.neh.gov//Open/data/NEH_Grants1990s.zip') %>%
+  xml_find_all('./Grant') %>%
+  head(1) %>%
+  xml_children()
+```
+
+We need to pull out the `AppNumber` attribute since this is the unique number used by the NEH to identify awarded grants.
+
+Of the 28 fields that are in the nodeset for each Grant, `Participant`, `Discipline`, and `Supplement` are complex node trees that have more than one children:
+
+```{r}
+read_xml_neh('https://securegrants.neh.gov/Open/data/NEH_Grants1990s.zip') %>%
+  xml_find_all('./Grant/*[count(*) > 0]') %>%
+  head(5)
+```
+
+Fortunately, after a conversation between the GCDFs and the folks at NEH, we now have access to flattened XML data where these fields are translated into strings that we can later process if we need.
+
+But it seems that not all the data in the non-flattened files are in the flattened versions.
+
+```{r}
+read_html('https://securegrants.neh.gov/open/data') %>%
+  html_nodes('a[href*="NEH_Grants"][href*="_Flat."]') %>%
+  html_attr('href') %>%
+  paste0('https://securegrants.neh.gov/', .) %>%
+  map(read_xml_neh) %>%
+  map(~ xml_find_all(., './Grant') %>% length) %>% 
+  unlist %>% 
+  sum
+```
+
+```{r}
+read_html('https://securegrants.neh.gov/open/data') %>%
+  html_nodes('a[href*="NEH_Grants"][href$=".zip"]:not([href$="_Flat.zip"])') %>%
+  html_attr('href') %>%
+  paste0('https://securegrants.neh.gov/', .) %>%
+  map(read_xml_neh) %>%
+  map(~ xml_find_all(., './Grant') %>% length) %>% 
+  unlist %>% 
+  sum
+```
+
+<!-- ### Pulling XML data into data frames -->
+
+<!-- Following [How to tame XML with nested data frames and purrr](https://github.com/jennybc/manipulate-xml-with-purrr-dplyr-tidyr#readme), we create the following function to transform our XML data to a data frame: -->
+
+<!-- ```{r} -->
+<!-- xmltodf <- function(xml) { -->
+<!--   xml %>%  -->
+<!--     xml_find_all('./Grant') %>% -->
+<!--     data_frame(row = seq_along(.), -->
+<!--                nodeset = .) %>% -->
+<!--     mutate(col_name_raw = nodeset %>% map(~ xml_children(.)) %>% map(~ xml_name(.)), -->
+<!--            cell_text = nodeset %>% map(~ xml_children(.)) %>% map(~ xml_text(.)), -->
+<!--            appnumber = nodeset %>% xml_attr('AppNumber'), -->
+<!--            i = nodeset %>% map(~ xml_children(.)) %>% map(~ seq_along(.))) %>% -->
+<!--     select(row, i, appnumber, col_name_raw, cell_text) %>% -->
+<!--     unnest() %>% -->
+<!--     group_by(row, appnumber, col_name_raw) %>%  -->
+<!--     summarise(cell_text = toString(cell_text)) %>% -->
+<!--     ungroup() %>% -->
+<!--     spread(col_name_raw, cell_text) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- We use the `xmltodf` function to transform all the XML files we have downloaded and transform them into data frames that we finally combine into one. We save the data to the file system to avoid redoing this process each time we run these scripts. -->
+
+<!-- ```{r} -->
+<!-- nehgrants <- read_html('https://securegrants.neh.gov/open/data') %>% -->
+<!--   html_nodes('a[href*="NEH_Grants"][href$="_Flat.zip"]') %>% -->
+<!--   html_attr('href') %>% -->
+<!--   paste0('https://securegrants.neh.gov/', .) %>% -->
+<!--   map(read_xml_neh) %>% -->
+<!--   map(xmltodf) %>% -->
+<!--   bind_rows -->
+<!-- ``` -->
+
+<!-- ### Cleaning -->
+
+<!-- The full NEH grant dataset contains 63228 distinct `AppNumber` values. -->
+
+<!-- ```{r} -->
+<!-- nehgrants %>% -->
+<!--   select(appnumber) %>% -->
+<!--   distinct %>% -->
+<!--   count -->
+<!-- ``` -->
+
+<!-- We would expect the `AppNumber` to be unique, but 310 of those 63228 (0.4%) have duplicate entries. -->
+
+<!-- ```{r} -->
+<!-- nehgrants %>% -->
+<!--   group_by(appnumber) %>% -->
+<!--   count %>% -->
+<!--   filter(n > 1) %>% -->
+<!--   count -->
+<!-- ``` -->
+
+<!-- The problem seems to lie in inconsistent values in the `ToSupport` column: -->
+
+<!-- ```{r} -->
+<!-- nehgrants %>% -->
+<!--   select(-row) %>% -->
+<!--   gather(column, value, -appnumber) %>% -->
+<!--   group_by(appnumber, column) %>% -->
+<!--   summarise(n=n_distinct(value)) %>% -->
+<!--   filter(n>1) %>% -->
+<!--   ungroup() %>% -->
+<!--   group_by(column) %>% -->
+<!--   count -->
+<!-- ``` -->
+
+<!-- Therefore, to "clean" our data we will for the time being remove the column(s) creating unnnecessary duplicates and convert column types appropriately: -->
+
+<!-- ```{r} -->
+<!-- grants <- nehgrants %>% -->
+<!--   select(-row, -ToSupport) %>% -->
+<!--   mutate_if(is.character, funs(type.convert)) %>% -->
+<!--   distinct() -->
+<!-- ``` -->
+
+<!-- So, now the duplicate row issue is resolved: -->
+
+<!-- ```{r} -->
+<!-- grants %>% -->
+<!--   group_by(appnumber) %>% -->
+<!--   count %>% -->
+<!--   filter(n > 1) %>% -->
+<!--   count -->
+<!-- ``` -->
+
+<!-- ### Funding adjusted for inflation -->
+
+<!-- In defining NEH funding, the [NEH Grants Data Dictionary](https://securegrants.neh.gov/Open/data/NEH_GrantsDictionary.pdf) explains that there are five different dollar amounts included in the grants dataset: -->
+
+<!-- 1. ApprovedOutright: Approved amount (outright funds). (Outright funds are not contingent on additional fundraising.)  -->
+<!-- 2. ApprovedMatching: Approved amount (matching funds). (Federal matching funds require a grantee to secure gift funds from third parties before federal funds are awarded. Except for Challenge Grants, NEH matching awards are made on a one-to-one basis.)  -->
+<!-- 3. AwardOutright: Amount actually awarded (outright funds).  -->
+<!-- 4. AwardMatching: Amount actually awarded (matching funds). -->
+<!-- 5. OriginalAmount: Original amount of grant (minus any grant supplements). -->
+
+<!-- We will define the relevant `funding` value as the sum of `ApprovedOutright` and `ApprovedMatching`.  -->
+
+<!-- Furthermore, we will adjust funding dollars into 2016 dollars using the `blscrapeR::inflation_adjust` function: -->
+
+<!-- ```{r warning=FALSE, message=FALSE, results='hide'} -->
+<!-- cpiadj <- inflation_adjust(2017) %>% -->
+<!--   data_frame(YearAwarded = seq_along(.) + 1946,  -->
+<!--              Adj = .) -->
+<!-- ``` -->
+
+<!-- ### Participants -->
+
+<!-- Though the bulk of projects have only one participant, there are a number more that have more than that. -->
+
+<!-- ```{r} -->
+<!-- nehgrants %>%  -->
+<!--   group_by(ParticipantCount) %>%  -->
+<!--   count -->
+<!-- ``` -->
+
+<!-- ### Issues  -->
+
+<!-- Participants, Disciplines, Supplements are nested nodes. Primary discipline made available. Supplements should be treated as a new grant that was awarded. ParticipantCount is not reliable number. At minimum, an orgnaization will have two participants, one more administrative.  -->
